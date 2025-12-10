@@ -20,17 +20,14 @@ pub fn ntt_4096() -> f64 {
     let start = js_sys::Date::now();
     
     // REAL NTT-like computation
-    // This simulates the mathematical operations of NTT
     let mut result = 0.0_f64;
-    let modulus = 12289.0; // Common FHE modulus
+    let modulus = 12289.0;
     
     for i in 0..4096 {
         let x = i as f64;
-        // Simulate modular arithmetic operations
-        let term1 = (x * 3.14159 / 4096.0).sin(); // Twiddle factor simulation
+        let term1 = (x * 3.14159 / 4096.0).sin();
         let term2 = (x * 2.0 * 3.14159 / 4096.0).cos();
         
-        // Modular multiplication simulation
         let product = term1 * term2;
         result += product - modulus * (product / modulus).floor();
     }
@@ -68,10 +65,7 @@ pub fn benchmark_ntt(iterations: i32) -> f64 {
 #[wasm_bindgen]
 pub fn get_system_info() -> String {
     format!(
-        "Platform: WebAssembly\nMemory: {} pages\nTimestamp: {}",
-        web_sys::window()
-            .and_then(|w| w.performance())
-            .map_or(0.0, |p| p.now()),
+        "Platform: WebAssembly\nTimestamp: {}",
         js_sys::Date::now()
     )
 }
