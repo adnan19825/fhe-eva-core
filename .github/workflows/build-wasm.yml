@@ -28,7 +28,7 @@ jobs:
 
     - name: Deploy
       run: |
-        # Stelle sicher, dass der wasm/ Ordner existiert
+        # STELLE SICHER, DASS DER ORDNER EXISTIERT
         mkdir -p wasm/
         # Lösche alte Dateien darin
         rm -rf wasm/*
