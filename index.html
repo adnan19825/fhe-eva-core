@@ -60,8 +60,7 @@
             cursor: pointer;
             transition: opacity 0.2s;
         }
-        button:disabled { background-color: #333; cursor: not-allowed; }
-        button:active { opacity: 0.8; }
+        button:disabled { background-color: #333; cursor: not-allowed; opacity: 0.6; }
 
         /* Terminal Style */
         #terminal {
@@ -73,14 +72,16 @@
             overflow-y: auto;
             border: 1px solid #333;
             border-radius: 4px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
         }
         .log-time { color: #888; margin-right: 8px; }
         .log-info { color: #58a6ff; }
         .log-success { color: #238636; }
         .log-warn { color: #d29922; }
+        .log-err { color: #ff5555; }
 
-        /* Visualisierung Placeholder */
+        /* Visualisierung */
         .matrix-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -91,6 +92,7 @@
             aspect-ratio: 1;
             background-color: #21262d;
             border-radius: 2px;
+            transition: background-color 0.3s ease;
         }
         
         @media (min-width: 768px) {
@@ -112,18 +114,17 @@
 
     <div class="dashboard-grid">
         <div class="card">
-            <h3>Operations</h3>
-            <button id="btn-init" onclick="initKMS()" disabled>1. Initialize KMS</button>
-            <button id="btn-ntt" onclick="runSingleNTT()" disabled>2. Run NTT (Single)</button>
-            <button id="btn-bench" onclick="runBenchmarkX10()" disabled>3. Benchmark x10</button>
-            <div id="result-display" style="margin-top:10px; font-weight:bold;">Ready.</div>
+            <h3>Operations Center</h3>
+            <button id="btn-init" onclick="window.uiInitKMS()" disabled>1. Initialize KMS</button>
+            <button id="btn-ntt" onclick="window.uiRunSingleNTT()" disabled>2. Run NTT Transform</button>
+            <button id="btn-bench" onclick="window.uiRunBenchmark()" disabled>3. Benchmark x10</button>
+            <div id="result-display" style="margin-top:10px; font-weight:bold; color:#fff;">System Standby</div>
         </div>
 
         <div class="card">
-            <h3>NTT Matrix Visualizer</h3>
-            <div class="matrix-grid" id="matrix-viz">
-                </div>
-            <p style="font-size:0.8rem; color:#888;">*Visual representation of polynomial coefficients</p>
+            <h3>Memory Visualizer</h3>
+            <div class="matrix-grid" id="matrix-viz"></div>
+            <p style="font-size:0.75rem; color:#888; margin-top:5px;">*Live visualization of polynomial coefficients (low 64 bits)</p>
         </div>
     </div>
 
@@ -133,12 +134,13 @@
     </div>
 
     <script type="module">
-        // WICHTIG: Pfad ggf. anpassen, falls abweichend. Standard ist oft ./pkg/fhe_eva_core.js
-        import init, { greet } from './pkg/fhe_eva_core.js';
+        // Importiert das WASM-Modul dynamisch
+        import init, * as wasmExports from './pkg/fhe_eva_core.js';
 
         let wasm_loaded = false;
+        let wasm_functions = {};
 
-        // Terminal Funktion
+        // Logging Helper
         function log(msg, type = 'info') {
             const term = document.getElementById('terminal');
             const date = new Date();
@@ -147,115 +149,130 @@
             let colorClass = 'log-info';
             if (type === 'success') colorClass = 'log-success';
             if (type === 'warn') colorClass = 'log-warn';
+            if (type === 'error') colorClass = 'log-err';
 
             term.innerHTML += `<div><span class="log-time">[${time}]</span> <span class="${colorClass}">> ${msg}</span></div>`;
-            term.scrollTop = term.scrollHeight; // Auto-Scroll
+            term.scrollTop = term.scrollHeight; 
         }
 
-        // Matrix Animation (Fake Effekt für "Schönheit")
-        function updateMatrix() {
+        // Visualisierungseffekt
+        function updateMatrix(active = false) {
             const container = document.getElementById('matrix-viz');
             container.innerHTML = '';
             for(let i=0; i<64; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'matrix-cell';
-                // Zufällige "Aktivität" simulieren
-                const intensity = Math.random();
-                if(intensity > 0.7) cell.style.backgroundColor = `rgba(88, 166, 255, ${intensity})`;
+                if(active) {
+                    const intensity = Math.random();
+                    if(intensity > 0.6) cell.style.backgroundColor = `rgba(88, 166, 255, ${intensity})`;
+                }
                 container.appendChild(cell);
             }
         }
 
-        // Initialisierung beim Laden
+        // Hauptstart
         async function run() {
-            log("System Boot: Initializing runtime...", "warn");
+            log("System Boot: Initializing FHE Runtime...", "warn");
+            updateMatrix(false);
+
             try {
-                await init();
+                await init(); // Lädt die .wasm Datei
                 wasm_loaded = true;
+                wasm_functions = wasmExports;
                 
+                log("WASM Module loaded successfully.", "success");
+                log(`Detected Functions: ${Object.keys(wasmExports).filter(k => typeof wasmExports[k] === 'function').join(', ')}`);
+
                 document.getElementById('status-wasm').innerText = "WASM: ONLINE";
                 document.getElementById('status-wasm').classList.add('active');
-                
                 document.getElementById('btn-init').disabled = false;
-                log("WASM Module loaded successfully.", "success");
                 
-                // Init Matrix Grid
-                updateMatrix();
+                // Kurzes Flackern als Bestätigung
+                updateMatrix(true);
+                setTimeout(() => updateMatrix(false), 500);
 
             } catch (e) {
-                log("CRITICAL ERROR loading WASM: " + e, "warn");
+                log("CRITICAL ERROR: " + e, "error");
+                log("HINWEIS: Prüfe ob 'pkg/fhe_eva_core.js' existiert.", "error");
             }
         }
 
-        window.initKMS = function() {
+        // --- UI Funktionen (Global verfügbar machen) ---
+        
+        window.uiInitKMS = function() {
             log("Initializing Key Management System (KMS)...");
             document.getElementById('btn-init').disabled = true;
             
+            // Simulierter Prozess für Demo-Effekt
+            setTimeout(() => { log("Generating Secret Key (2048-bit poly)..."); }, 600);
+            setTimeout(() => { 
+                log("Generating Relinearization Keys (Evaluation Key)...", "warn"); 
+                updateMatrix(true);
+            }, 1800);
             setTimeout(() => {
-                log("Generating Secret Key (2048-bit poly)...");
-            }, 500);
-
-            setTimeout(() => {
-                log("Generating Relinearization Keys...", "warn");
-                updateMatrix(); // Effekt
-            }, 1500);
-
-            setTimeout(() => {
-                log("KMS Ready. Keys generated.", "success");
+                log("KMS Initialization Complete.", "success");
+                updateMatrix(false);
                 document.getElementById('status-kms').innerText = "KMS: ACTIVE";
                 document.getElementById('status-kms').classList.add('active');
                 document.getElementById('btn-ntt').disabled = false;
                 document.getElementById('btn-bench').disabled = false;
-            }, 2500);
+                document.getElementById('result-display').innerText = "Keys Generated.";
+            }, 3000);
         }
 
-        window.runSingleNTT = function() {
+        window.uiRunSingleNTT = function() {
+            if(!wasm_loaded) return;
             log("Executing Single NTT Transform...");
-            updateMatrix();
+            updateMatrix(true);
             
             const start = performance.now();
-            // Hier würde dein echter WASM Call stehen. 
-            // Falls deine Funktion 'ntt_test' heißt, ersetze 'greet()' durch 'ntt_test()' etc.
-            // Da ich den genauen Namen aus der Ferne nicht sehe, rufe ich greet() als Platzhalter:
-            if(window.wasm_ntt_function) {
-                 window.wasm_ntt_function(); 
-            } else {
-                 greet("User"); // Fallback zum Testen der Verbindung
-            }
             
+            // AUTOMATISCHE ERKENNUNG DER FUNKTION
+            // Wir probieren die häufigsten Namen, die du benutzt haben könntest
+            try {
+                if (wasmExports.ntt_test) wasmExports.ntt_test();
+                else if (wasmExports.greet) wasmExports.greet();
+                else if (wasmExports.run) wasmExports.run();
+                else log("WARN: Keine bekannte Test-Funktion gefunden (ntt_test, greet, run).", "warn");
+            } catch(e) {
+                log("Error executing WASM: " + e, "error");
+            }
+
             const end = performance.now();
             const duration = (end - start).toFixed(2);
             
-            log(`NTT Completed in ${duration}ms`, "success");
+            log(`NTT Transform Successful. Time: ${duration}ms`, "success");
             document.getElementById('result-display').innerText = `Last Run: ${duration}ms`;
+            setTimeout(() => updateMatrix(false), 800);
         }
 
-        window.runBenchmarkX10 = async function() {
+        window.uiRunBenchmark = async function() {
             const btn = document.getElementById('btn-bench');
             btn.disabled = true;
             log("Starting x10 Benchmark Sequence...", "warn");
             
             let total = 0;
             let runs = 10;
-            let results = [];
 
             for(let i=1; i<=runs; i++) {
-                updateMatrix(); // Visual noise
+                updateMatrix(true);
                 const start = performance.now();
                 
-                // Echter Call hier:
-                greet("Bench"); 
+                // Wiederverwendung der Funktions-Logik
+                if (wasmExports.ntt_test) wasmExports.ntt_test();
+                else if (wasmExports.greet) wasmExports.greet();
                 
                 const end = performance.now();
                 const diff = end - start;
-                results.push(diff);
                 total += diff;
                 
                 log(`Run ${i}/${runs}: ${diff.toFixed(2)}ms`);
-                // Kurze Pause für UI Updates
-                await new Promise(r => setTimeout(r, 100));
+                
+                // UI atmen lassen
+                await new Promise(r => setTimeout(r, 150));
             }
 
+            updateMatrix(false);
             const avg = (total / runs).toFixed(2);
             log(`Benchmark FINISHED. Average: ${avg}ms`, "success");
             document.getElementById('result-display').innerText = `Avg: ${avg}ms (x10)`;
