@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHE Eva Core - Redirect</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            background: rgba(30, 41, 59, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        p {
+            margin: 15px 0;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+        .redirect-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
+        }
+        .qr-code {
+            margin: 25px auto;
+            width: 200px;
+            height: 200px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .links {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        .link-item {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 25px; }
+            h1 { font-size: 2rem; }
+            .links { flex-direction: column; }
+        }
+    </style>
+    <script>
+        // Auto-redirect after 3 seconds
+        setTimeout(() => {
+            window.location.href = 'public/index.html';
+        }, 3000);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 FHE Eva Core</h1>
+        <p>Hardware-accelerated Fully Homomorphic Encryption</p>
+        
+        <div class="redirect-message">
+            ⏳ Redirecting to live demo in 3 seconds...
+        </div>
+        
+        <div style="margin: 25px 0;">
+            <a href="public/index.html" class="button">🚀 Go to Live Demo</a>
+            <a href="public/qr.html" class="button">📱 QR Code Page</a>
+        </div>
+        
+        <div class="links">
+            <a href="https://github.com/adnan19825/fhe-eva-core" class="link-item">GitHub Repository</a>
+            <a href="https://linkedin.com/in/adnan-mamutoski" class="link-item">Developer LinkedIn</a>
+            <a href="public/qr.html" class="link-item">Mobile QR Code</a>
+        </div>
+        
+        <p style="margin-top: 30px; color: #64748b; font-size: 0.9rem;">
+            Apache 2.0 License · December 2025
+        </p>
+    </div>
+</body>
+</html>
