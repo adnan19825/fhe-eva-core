@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHE Eva Core - Mobile QR</title>
+    <style>
+        body { 
+            background: #0f172a; 
+            color: white; 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+            text-align: center;
+        }
+        .card {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            max-width: 400px;
+        }
+        h2 { color: #60a5fa; margin-top: 0; }
+        .qr-placeholder {
+            background: white;
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+        }
+        /* Hier würde ein echter QR Code Generator stehen. Für Demo nutzen wir eine API */
+        img { border-radius: 10px; }
+        
+        .btn {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>📱 FHE Eva Core</h2>
+        <p>Scannen Sie den QR-Code, um die hardwarebeschleunigte FHE auf Ihrem Smartphone zu testen.</p>
+        
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://adnan19825.github.io/fhe-eva-core/" alt="QR Code">
+        
+        <br>
+        <a href="index.html" class="btn">📱 Demo direkt öffnen</a>
+    </div>
+</body>
+</html>
