@@ -1,5 +1,13 @@
 let wasm;
 
+/**
+ * @returns {number}
+ */
+export function ntt_4096() {
+    const ret = wasm.ntt_4096();
+    return ret;
+}
+
 const EXPECTED_RESPONSE_TYPES = new Set(['basic', 'cors', 'default']);
 
 async function __wbg_load(module, imports) {
