@@ -260,8 +260,8 @@
             <div class="qr-code">
                 FHE
             </div>
-            <a href="https://adnan19825.github.io/fhe-eva-core/" class="demo-link" target="_blank">
-                https://adnan19825.github.io/fhe-eva-core/
+            <a href="https://adnan19825.github.io/fhe_eva_core/" class="demo-link" target="_blank">
+                https://adnan19825.github.io/fhe_eva_core/
             </a>
         </section>
 
@@ -304,21 +304,21 @@
             <h2>Geräte-Benchmarks</h2>
             <div class="hardware-list">
                 <div class="hardware-item">
-                    <h3>Samsung Galaxy S23 Ultra</h3>
-                    <p>12 GB RAM · Snapdragon 8 Gen 2</p>
-                    <p><strong>18,2 ms für NTT 1024</strong></p>
+                    <h3>Apple iPhone 17 Pro</h3>
+                    <p>12 GB RAM · Apple A19 Pro</p>
+                    <p><strong>Referenz für anhaltende CPU/GPU-Leistung</strong></p>
                 </div>
                 
                 <div class="hardware-item">
-                    <h3>iPhone 15 Pro</h3>
-                    <p>8 GB RAM · Apple A17 Pro</p>
-                    <p><strong>~12,4 ms (geschätzt)</strong></p>
+                    <h3>Samsung Galaxy S25 Ultra</h3>
+                    <p>12 GB RAM · Snapdragon 8 Elite</p>
+                    <p><strong>Referenz für KI-beschleunigte Berechnungen</strong></p>
                 </div>
                 
                 <div class="hardware-item">
-                    <h3>Google Pixel 7</h3>
-                    <p>8 GB RAM · Tensor G2</p>
-                    <p><strong>~24,8 ms (geschätzt)</strong></p>
+                    <h3>Google Pixel 10</h3>
+                    <p>12 GB RAM · Google Tensor G5</p>
+                    <p><strong>Referenz für softwareoptimierte Leistung</strong></p>
                 </div>
             </div>
         </section>
@@ -326,8 +326,8 @@
         <section class="test-steps">
             <h2>Was wird getestet?</h2>
             <ul class="steps">
-                <li><strong>Verschlüsselte Berechnungen:</strong> Direkt auf der Hardware Ihres Geräts (GPU/CPU) ausgeführt, ohne Ihre Daten preiszugeben.</li>
-                <li><strong>Warum das wichtig ist:</strong> Ermöglicht private Gesundheitsanalysen, sicheres Banking und vertrauliche KI – alles auf Ihrem Smartphone.</li>
+                <li><strong>Verschlüsselte Berechnungen:</strong> Direkt auf der Hardware Ihres Geräts (GPU/CPU) ausgeführt, ohne dass Ihre Daten jemals entschlüsselt oder preisgegeben werden.</li>
+                <li><strong>Warum das wichtig ist:</strong> Ermöglicht private Gesundheitsanalysen, sicheres Banking auf fremden Geräten, vertrauliche KI-Inferenz und vieles mehr – alles lokal auf Ihrem Smartphone.</li>
             </ul>
         </section>
 
@@ -338,13 +338,12 @@
     </div>
 
     <script>
-        // Dynamischer Base-Path für GitHub Pages
-        const isGitHubPages = window.location.hostname.includes('github.io');
-        const repoName = 'fhe-eva-core';
-        const basePath = isGitHubPages ? `/${repoName}/` : './';
+        // Fester Base-Path für die neue URL
+        const basePath = 'https://adnan19825.github.io/fhe_eva_core/';
         
         let wasmLoaded = false;
         let runtimeInitialized = false;
+        let wasmExports = null;
         
         // Status Element
         const statusDisplay = document.getElementById('statusDisplay');
@@ -366,47 +365,29 @@
             resultsDiv.prepend(resultItem);
         }
         
-        // WASM Loader
+        // WASM Loader - KEINE SIMULATION
         async function loadWASM() {
             updateStatus('📦 Lade WebAssembly...', 'loading');
             
             try {
-                // Prüfe ob WASM Dateien existieren
                 const wasmResponse = await fetch(`${basePath}wasm/fhe_eva_core_bg.wasm`);
-                if (!wasmResponse.ok) {
-                    throw new Error('WASM Datei nicht gefunden');
-                }
+                if (!wasmResponse.ok) throw new Error('WASM Datei nicht gefunden');
                 
                 const jsResponse = await fetch(`${basePath}wasm/fhe_eva_core.js`);
-                if (!jsResponse.ok) {
-                    throw new Error('JS Bridge nicht gefunden');
-                }
+                if (!jsResponse.ok) throw new Error('JS Bridge nicht gefunden');
                 
-                // Lade WASM
                 const module = await import(`${basePath}wasm/fhe_eva_core.js`);
-                await module.default(`${basePath}wasm/fhe_eva_core_bg.wasm`);
+                wasmExports = await module.default(`${basePath}wasm/fhe_eva_core_bg.wasm`);
                 
                 wasmLoaded = true;
                 updateStatus('✅ WebAssembly erfolgreich geladen!', 'success');
-                addResult('WebAssembly Runtime geladen');
-                
-                // Aktiviere Init Button
+                addResult('Echte WebAssembly Runtime geladen');
                 initBtn.disabled = false;
                 
             } catch (error) {
                 updateStatus(`❌ WASM Fehler: ${error.message}`, 'error');
                 addResult(`WASM konnte nicht geladen werden: ${error.message}`, true);
-                
-                // Fallback: Simuliere WASM für Demo-Zwecke
-                simulateWASM();
             }
-        }
-        
-        function simulateWASM() {
-            console.log('⚠️ Verwende simulierten WASM-Fallback');
-            wasmLoaded = true;
-            updateStatus('⚠️ Simulation: WASM geladen (lokaler Test empfohlen)', 'loading');
-            initBtn.disabled = false;
         }
         
         async function initRuntime() {
@@ -418,15 +399,12 @@
             updateStatus('🔧 Initialisiere Laufzeitumgebung...', 'loading');
             initBtn.disabled = true;
             
-            // Simuliere Hardware-Erkennung
+            // Echte Initialisierung oder Hardware-Erkennung
             setTimeout(() => {
                 const hardwareInfo = detectHardware();
-                
                 runtimeInitialized = true;
                 updateStatus(`✅ Laufzeit initialisiert auf: ${hardwareInfo}`, 'success');
                 addResult(`Hardware erkannt: ${hardwareInfo}`);
-                
-                // Aktiviere weitere Buttons
                 runNttBtn.disabled = false;
                 benchmarkBtn.disabled = false;
             }, 1500);
@@ -434,22 +412,15 @@
         
         function detectHardware() {
             const ua = navigator.userAgent;
-            
-            if (ua.includes('iPhone') || ua.includes('iPad')) {
-                return 'Apple Silicon (iOS Simulation)';
-            } else if (ua.includes('Android')) {
-                if (ua.includes('Samsung')) return 'Samsung ARM (Android Simulation)';
-                if (ua.includes('Pixel')) return 'Google Tensor (Android Simulation)';
+            if (ua.includes('iPhone') || ua.includes('iPad')) return 'Apple Silicon (iOS)';
+            else if (ua.includes('Android')) {
+                if (ua.includes('Samsung')) return 'Samsung ARM (Android)';
+                if (ua.includes('Pixel')) return 'Google Tensor (Android)';
                 return 'ARM Android Device';
-            } else if (ua.includes('Win')) {
-                return 'x86 Windows (Simulation)';
-            } else if (ua.includes('Mac')) {
-                return 'Apple Silicon (macOS Simulation)';
-            } else if (ua.includes('Linux')) {
-                return 'x86/ARM Linux (Simulation)';
-            }
-            
-            return 'Unbekannte Hardware (Simulation)';
+            } else if (ua.includes('Win')) return 'x86 Windows';
+            else if (ua.includes('Mac')) return 'Apple Silicon (macOS)';
+            else if (ua.includes('Linux')) return 'x86/ARM Linux';
+            return 'Unbekannte Hardware';
         }
         
         function runNTT() {
@@ -461,15 +432,25 @@
             updateStatus('⚡ Führe NTT 4096 aus...', 'loading');
             runNttBtn.disabled = true;
             
-            // Simuliere NTT-Berechnung
-            setTimeout(() => {
-                const time = (Math.random() * 30 + 5).toFixed(1);
-                const result = `NTT 4096 abgeschlossen in ${time} ms`;
-                
-                updateStatus(`✅ ${result}`, 'success');
-                addResult(result);
-                runNttBtn.disabled = false;
-            }, 2000);
+            // Versuche echte WASM-Funktion
+            if (wasmExports && typeof wasmExports.ntt_4096 === 'function') {
+                try {
+                    const startTime = performance.now();
+                    wasmExports.ntt_4096();
+                    const endTime = performance.now();
+                    const time = (endTime - startTime).toFixed(1);
+                    const result = `NTT 4096 abgeschlossen in ${time} ms`;
+                    updateStatus(`✅ ${result}`, 'success');
+                    addResult(result);
+                } catch (error) {
+                    updateStatus(`❌ Fehler bei NTT: ${error.message}`, 'error');
+                    addResult(`NTT Fehler: ${error.message}`, true);
+                }
+            } else {
+                updateStatus('❌ NTT-Funktion nicht verfügbar', 'error');
+                addResult('Die NTT-Funktion wurde im WASM-Code nicht gefunden.', true);
+            }
+            runNttBtn.disabled = false;
         }
         
         function runBenchmark() {
@@ -480,52 +461,18 @@
             
             updateStatus('📊 Führe Benchmark (10x NTT 4096) aus...', 'loading');
             benchmarkBtn.disabled = true;
-            
-            // Simuliere Benchmark
-            let results = [];
-            let completed = 0;
-            
-            const runIteration = (i) => {
-                setTimeout(() => {
-                    const time = (Math.random() * 10 + 10).toFixed(1);
-                    results.push(parseFloat(time));
-                    completed++;
-                    
-                    updateStatus(`📊 Benchmark: ${completed}/10 Durchläufe...`, 'loading');
-                    addResult(`Durchlauf ${i + 1}: ${time} ms`);
-                    
-                    if (completed === 10) {
-                        const avg = (results.reduce((a, b) => a + b, 0) / 10).toFixed(1);
-                        const min = Math.min(...results).toFixed(1);
-                        const max = Math.max(...results).toFixed(1);
-                        
-                        updateStatus(`✅ Benchmark abgeschlossen: Ø ${avg} ms`, 'success');
-                        addResult(`Benchmark Ergebnis: Ø ${avg} ms (min: ${min} ms, max: ${max} ms)`);
-                        benchmarkBtn.disabled = false;
-                    }
-                }, i * 300);
-            };
-            
-            for (let i = 0; i < 10; i++) {
-                runIteration(i);
-            }
+            updateStatus('❌ Benchmark-Funktion nicht implementiert', 'error');
+            addResult('Benchmark-Funktion muss noch in Rust implementiert werden.', true);
+            benchmarkBtn.disabled = false;
         }
         
         // Initialisiere die Demo
         document.addEventListener('DOMContentLoaded', () => {
             updateStatus('🔍 Erkennung läuft...', 'loading');
-            
-            // Starte WASM-Loading
             setTimeout(() => {
                 loadWASM();
             }, 1000);
-            
-            // Hinweis für lokales Testing
-            if (!isGitHubPages) {
-                addResult('Lokaler Server erkannt - volle WASM-Funktionalität verfügbar');
-            } else {
-                addResult('GitHub Pages - Simulation aktiv (lokaler Test für volle Funktion)');
-            }
+            addResult('Demo initialisiert');
         });
     </script>
 </body>
