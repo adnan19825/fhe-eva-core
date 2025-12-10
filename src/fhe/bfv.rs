@@ -3,7 +3,7 @@
 
 use super::super::modular;
 
-// === NEUE STRUKTUREN AM ANFANG HINZUFÜGEN ===
+// === NEUE STRUKTUREN ===
 pub struct BFVParameters {
     pub cipher_modulus: u64,
     pub plain_modulus: u64,
@@ -26,35 +26,7 @@ impl BFVContext {
     }
 }
 
-// === DEIN EXISTIERENDER CODE DARUNTER (NICHT LÖSCHEN!) ===
-
-/// BFV encryption simulation (deterministic for verification)
-pub fn encrypt_decrypt_cycle(poly_degree: usize, cipher_modulus: u64, plain_modulus: u64) -> bool {
-    // ... dein gesamter existierender Code bleibt UNVERÄNDERT ...
-}
-
-/// BFV homomorphic addition
-pub fn homomorphic_add(
-    ct1: (&[u64], &[u64]),
-    ct2: (&[u64], &[u64]),
-    cipher_modulus: u64,
-) -> (Vec<u64>, Vec<u64>) {
-    // ... dein gesamter existierender Code bleibt UNVERÄNDERT ...
-}
-
-/// BFV homomorphic multiplication (simplified)
-pub fn homomorphic_mul_simple(
-    ct1: (&[u64], &[u64]),
-    ct2: (&[u64], &[u64]),
-    cipher_modulus: u64,
-    plain_modulus: u64,
-) -> (Vec<u64>, Vec<u64>, Vec<u64>) {
-    // ... dein gesamter existierender Code bleibt UNVERÄNDERT ...
-}
-//! BFV scheme operations
-//! Brakerski-Fan-Vercauteren scheme implementation
-
-use super::super::modular;
+// === DEINE ORIGINALEN FUNKTIONEN (VOLLSTÄNDIG) ===
 
 /// BFV encryption simulation (deterministic for verification)
 pub fn encrypt_decrypt_cycle(poly_degree: usize, cipher_modulus: u64, plain_modulus: u64) -> bool {
@@ -172,31 +144,4 @@ pub fn homomorphic_mul_simple(
     }
     
     (result_c0, result_c1, result_c2)
-}
-//! BFV scheme operations
-//! Brakerski-Fan-Vercauteren scheme implementation
-
-use super::super::modular;
-
-// === NEUE STRUKTUREN AM ANFANG HINZUFÜGEN ===
-pub struct BFVParameters {
-    pub cipher_modulus: u64,
-    pub plain_modulus: u64,
-    pub poly_degree: usize,
-}
-
-pub struct BFVContext {
-    pub params: BFVParameters,
-}
-
-impl BFVContext {
-    pub fn new() -> Self {
-        Self {
-            params: BFVParameters {
-                cipher_modulus: 0x7fffffffe0001,
-                plain_modulus: 65537,
-                poly_degree: 1024,
-            }
-        }
-    }
 }
