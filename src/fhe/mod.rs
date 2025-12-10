@@ -21,7 +21,8 @@ impl Default for FHEParameters {
             root_of_unity: 7,
         }
     }
+}  // ← DIESE Klammer war vergessen!
 
 /// Re-export common types for easier access
 pub use bfv::{BFVParameters, BFVContext};
-pub use ckks::{CKKSParameters, CKKSContext};
+// pub use ckks::{CKKSParameters, CKKSContext};  // AUSKOMMENTIERT, weil ckks.rs sie nicht hat!
