@@ -1,49 +1,35 @@
-name: Build and Deploy WebAssembly
+name: Build and Deploy WASM
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+    
     steps:
-    - uses: actions/checkout@v4
-
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      
     - name: Setup Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source $HOME/.cargo/env
-        rustup target add wasm32-unknown-unknown
-
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+      
     - name: Install wasm-pack
-      run: cargo install wasm-pack
-
-    - name: Build
-      run: wasm-pack build --release --target web
-
-    - name: Deploy
-      run: |
-        # STELLE SICHER, DASS DER ORDNER EXISTIERT
-        mkdir -p wasm/
-        # Lösche alte Dateien darin
-        rm -rf wasm/*
-        # Kopiere die neu gebauten Dateien
-        cp pkg/*.wasm pkg/*.js wasm/
-        # Zeige, was kopiert wurde
-        ls -la wasm/
-
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add wasm/
-
-        if git diff --staged --quiet; then
-          echo "No changes."
-        else
-          git commit -m "Update WebAssembly build [skip ci]"
-          git push
-        fi
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      
+    - name: Build WASM Package
+      run: wasm-pack build --target web --out-name fhe_eva_core --out-dir ./wasm --release
+      
+    - name: Upload WASM artifacts
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./wasm
