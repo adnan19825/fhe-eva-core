@@ -24,7 +24,7 @@ Based on **v6.4 (Radix-4 Core)** live production telemetry.
 | **Core Algorithm** | **Radix-4 NTT** | Optimized Cooley-Tukey (4x Memory Throughput) |
 | **Polynomial Size** | **4096** | Standard Security Level |
 | **Mobile Latency** | **~28ms - 36ms** | Tested on Android via WASM (Chrome) |
-| **Build Size** | **~29 KB** | Extremely lightweight WASM binary |
+| **Build Size** | **~15-30 KB** | Extremely lightweight WASM binary |
 
 ---
 
@@ -44,7 +44,7 @@ Based on **v6.4 (Radix-4 Core)** live production telemetry.
 
 ---
 
-## 🚀 **Live Demo**
+## 🚀 **Quick Start**
 
 Experience the runtime directly in your browser. No installation required.
 
@@ -55,23 +55,8 @@ Experience the runtime directly in your browser. No installation required.
 | **🌐 Operations Center** | [**Click to Open Dashboard**](https://adnan19825.github.io/fhe-eva-core/) | Desktop & Analysis |
 | **📱 Mobile QR** | [**Scan QR Code**](https://adnan19825.github.io/fhe-eva-core/public/qr.html) | Mobile Performance Test |
 
-### **Test Scenario:**
-1.  **Initialize KMS:** Watch the system allocate 4096 coefficients and generate keys using the LCG.
-2.  **Run NTT Transform:** Execute the **Radix-4** algorithm. Observe the memory visualization change as coefficients are permuted.
-3.  **Stress Benchmark:** Run the x50 loop to test thermal stability and sustained performance.
-
 ---
 
-## 🛠️ **Local Development**
-
-This project uses a Rust-based toolchain with `wasm-pack`.
-
-```bash
-# 1. Clone Repository
-git clone [https://github.com/adnan19825/fhe-eva-core](https://github.com/adnan19825/fhe-eva-core)
-
-# 2. Build WASM (Release Mode)
-wasm-pack build --target web --release
-
-# 3. Serve Locally
-python3 -m http.server
+<div align="center">
+  <sub>Architected & Maintained by Adnan Mamutoski</sub>
+</div>
