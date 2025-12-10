@@ -1,24 +1,30 @@
 name: Build WebAssembly
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch: # Ermöglicht manuellen Start
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+
     - name: Setup Rust
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         source $HOME/.cargo/env
         rustup target add wasm32-unknown-unknown
+
     - name: Install wasm-pack
       run: cargo install wasm-pack
+
     - name: Build WASM
       run: wasm-pack build --target web
-    - name: Upload artifact
+
+    - name: Upload WASM artifact
       uses: actions/upload-artifact@v3
       with:
-        name: wasm-build
+        name: wasm-pkg
         path: pkg/
