@@ -1,33 +1,30 @@
-name: Build FHE Eva Core
+name: Build and Deploy WASM
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0'
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
+        toolchain: stable
         targets: wasm32-unknown-unknown
-        components: rust-src, clippy, rustfmt
-    
+        components: rust-src
+
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
@@ -36,44 +33,117 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    
+
     - name: Install wasm-pack
       run: |
         curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-        wasm-pack --version
-    
+
     - name: Build WASM
       run: |
-        wasm-pack build \
-          --target web \
-          --out-name fhe_eva_core \
-          --out-dir ./wasm \
-          --release \
-          --verbose
-    
+        wasm-pack build --target web --release --out-name fhe_eva_core --out-dir wasm
+
     - name: Optimize WASM
       run: |
         which wasm-opt || npm install -g binaryen
         wasm-opt -Oz \
-          --enable-all \
+          --all-features \
           --strip-debug \
           --strip-producers \
           -o wasm/fhe_eva_core_bg.wasm \
           wasm/fhe_eva_core_bg.wasm
         echo "WASM size: $(wc -c < wasm/fhe_eva_core_bg.wasm) bytes"
-    
+
     - name: Test WASM
       run: |
-        node -e "
-          const fs = require('fs');
-          const wasm = fs.readFileSync('./wasm/fhe_eva_core_bg.wasm');
-          console.log('WASM header:', wasm.slice(0, 4).toString('hex'));
-          console.log('WASM is valid:', wasm.slice(0, 4).toString() === '\\0asm');
-        "
-    
-    - name: Deploy to Pages
-      uses: peaceiris/actions-gh-pages@v3
+        cd wasm
+        echo "Testing WASM module..."
+        node -e "const mod = require('./fhe_eva_core.js'); console.log('WASM module loaded successfully');"
+
+    - name: Upload WASM artifact
+      uses: actions/upload-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./wasm
-        keep_files: true
+        name: fhe-eva-core-wasm
+        path: wasm/
+        retention-days: 7
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download WASM artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: fhe-eva-core-wasm
+        path: dist/
+
+    - name: Create example HTML
+      run: |
+        cat > dist/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>FHE Eva Core - Homomorphic Encryption</title>
+            <meta charset="utf-8">
+            <style>
+                body { font-family: monospace; margin: 40px; }
+                .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+            </style>
+        </head>
+        <body>
+            <h1>FHE Eva Core 🚀</h1>
+            <p>Fully Homomorphic Encryption WebAssembly Runtime</p>
+            <div id="output"></div>
+            
+            <script type="module">
+                import init, { ntt_1024 } from './fhe_eva_core.js';
+                
+                async function run() {
+                    await init();
+                    const output = document.getElementById('output');
+                    
+                    output.innerHTML += '<div class="result">Loading WASM...</div>';
+                    
+                    const start = performance.now();
+                    const result = ntt_1024();
+                    const duration = performance.now() - start;
+                    
+                    output.innerHTML += `
+                        <div class="result">
+                            <strong>✅ NTT 1024 Test Successful!</strong><br>
+                            Result: ${result.toFixed(4)}<br>
+                            Execution time: ${duration.toFixed(2)}ms
+                        </div>
+                    `;
+                    
+                    output.innerHTML += '<div class="result">🎉 FHE Runtime is working!</div>';
+                }
+                
+                run().catch(console.error);
+            </script>
+        </body>
+        </html>
+        EOF
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+
+    - name: Upload to Pages
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: dist/
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
