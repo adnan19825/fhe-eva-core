@@ -2,7 +2,6 @@
 //! Brakerski-Fan-Vercauteren scheme implementation
 
 use super::super::modular;
-use super::super::ntt;
 
 /// BFV encryption simulation (deterministic for verification)
 pub fn encrypt_decrypt_cycle(poly_degree: usize, cipher_modulus: u64, plain_modulus: u64) -> bool {
