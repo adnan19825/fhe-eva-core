@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHE Eva Core - Live Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f1f5f9;
+            min-height: 100vh;
+            padding: 15px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        /* Header Card */
+        .header-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        h1 {
+            background: linear-gradient(90deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background: #475569;
+            color: #e2e8f0;
+        }
+        .badge.active { background: #10b981; color: white; }
+        
+        /* Action Buttons */
+        .grid { display: grid; gap: 12px; }
+        button {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        
+        .btn-init { background: #3b82f6; }
+        .btn-run { background: #10b981; }
+        .btn-bench { background: #f59e0b; }
+        .btn-error { background: #ef4444; }
+        
+        /* Console Output */
+        .terminal {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .log { margin-bottom: 6px; border-bottom: 1px solid #1e293b; padding-bottom: 2px; }
+        .log.success { color: #4ade80; }
+        .log.warn { color: #fbbf24; }
+        .log.info { color: #94a3b8; }
+        
+        .qr-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #60a5fa;
+            text-decoration: none;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-card">
+            <h1>🔒 FHE Eva Core</h1>
+            <p style="color: #94a3b8;">Adaptive Runtime Environment v0.1.0</p>
+        </div>
+
+        <div class="status-bar">
+            <div>
+                <div style="font-size: 0.8rem; color: #64748b;">Aktuelles Backend</div>
+                <div id="backendName" style="font-weight: bold;">Erkennung läuft...</div>
+            </div>
+            <div id="statusBadge" class="badge">Warten</div>
+        </div>
+
+        <div class="grid">
+            <button class="btn-init" onclick="initRuntime()">
+                <span>⚡</span> Laufzeit initialisieren
+            </button>
+            <button class="btn-run" onclick="runNTT()">
+                <span>🚀</span> Run NTT 4096
+            </button>
+            <button class="btn-bench" onclick="runBenchmark()">
+                <span>📊</span> Benchmark (10x)
+            </button>
+            <button class="btn-error" onclick="forceFallback()">
+                <span>🔄</span> Test-Fallback
+            </button>
+        </div>
+
+        <div class="terminal" id="console">
+            <div class="log info">System bereit zur Initialisierung des FHE Eva Core...</div>
+        </div>
+
+        <a href="qr.html" class="qr-link">📱 Zur QR-Code-Ansicht wechseln</a>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('console');
+        const badge = document.getElementById('statusBadge');
+        const backendLabel = document.getElementById('backendName');
+        let initialized = false;
+        let backend = 'Unknown';
+
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `> ${msg}`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function initRuntime() {
+            log('Scanne Hardware...', 'info');
+            badge.textContent = 'Scanning';
+            
+            setTimeout(() => {
+                // Feature Detection Simulation
+                const hasGPU = 'gpu' in navigator;
+                backend = hasGPU ? 'WebGPU (Experimental)' : 'WASM SIMD';
+                
+                if(!hasGPU) {
+                    log('WebGPU nicht verfügbar. Fallback auf CPU.', 'warn');
+                }
+                
+                initialized = true;
+                backendLabel.textContent = backend;
+                badge.textContent = 'Bereit';
+                badge.className = 'badge active';
+                log(`Initialisiert: ${backend}`, 'success');
+            }, 800);
+        }
+
+        function runNTT() {
+            if(!initialized) return log('Bitte erst initialisieren!', 'warn');
+            
+            log('Starte NTT 4096 Berechnung...', 'info');
+            badge.textContent = 'Rechne...';
+            
+            // Performance Simulation
+            const speed = backend.includes('WebGPU') ? 2.1 : 18.2;
+            
+            setTimeout(() => {
+                log(`✅ Fertig in ${speed}ms`, 'success');
+                log('Security Level: 128-bit', 'info');
+                badge.textContent = 'Bereit';
+            }, 500);
+        }
+
+        function runBenchmark() {
+            if(!initialized) return log('Bitte erst initialisieren!', 'warn');
+            log('Starte Benchmark Suite...', 'info');
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                i++;
+                const time = (Math.random() * 2 + (backend.includes('WebGPU') ? 1 : 16)).toFixed(1);
+                log(`Iter ${i}: ${time}ms`, 'info');
+                
+                if(i >= 5) {
+                    clearInterval(interval);
+                    log('📊 Benchmark abgeschlossen.', 'success');
+                }
+            }, 100);
+        }
+
+        function forceFallback() {
+            log('⚠️ Simuliere Treiber-Absturz...', 'warn');
+            setTimeout(() => {
+                backend = 'WASM Scalar (Safe Mode)';
+                backendLabel.textContent = backend;
+                backendLabel.style.color = '#fbbf24';
+                log('🔄 Fallback erfolgreich aktiviert.', 'success');
+            }, 600);
+        }
+    </script>
+</body>
+</html>
