@@ -1,252 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FHE Eva Core - Live Demo</title>
+    <title>FHE Eva Core - Hardware Accelerated FHE</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            color: #f1f5f9;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
             min-height: 100vh;
             padding: 20px;
+            line-height: 1.6;
         }
+        
         .container {
             max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
         }
+        
         header {
             text-align: center;
-            padding: 30px 20px;
-            background: rgba(30, 41, 59, 0.8);
-            border-radius: 20px;
-            margin-bottom: 30px;
-            border: 1px solid #334155;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            padding-top: 20px;
         }
+        
         h1 {
             font-size: 2.5rem;
-            background: linear-gradient(90deg, #60a5fa, #34d399);
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
         }
-        .subtitle { color: #94a3b8; font-size: 1.1rem; }
         
-        .status-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid #334155;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
-        .badge.init { background: #64748b; color: white; }
-        .badge.ready { background: #10b981; color: white; }
-        .badge.processing { background: #f59e0b; color: white; }
-        
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
             margin-bottom: 30px;
         }
         
-        button {
-            padding: 18px;
-            border: none;
+        .qr-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 25px;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            border: 1px solid #334155;
+        }
+        
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            background: white;
+            padding: 15px;
             border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            font-size: 3rem;
+            color: #0f172a;
+            font-weight: bold;
         }
-        button:active { transform: scale(0.98); }
         
-        .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
-        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .demo-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 1.1rem;
+            word-break: break-all;
+        }
         
-        .console {
-            background: #0f172a;
+        .demo-link:hover {
+            text-decoration: underline;
+        }
+        
+        .test-steps {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 30px 0;
             border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 15px;
-            height: 300px;
-            overflow-y: auto;
-            font-family: 'Monaco', monospace;
-            font-size: 0.9rem;
-            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3);
-        }
-        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1e293b; padding-bottom: 4px; }
-        .log-time { color: #64748b; font-size: 0.8rem; margin-right: 10px; }
-        .log-info { color: #e2e8f0; }
-        .log-success { color: #34d399; }
-        .log-warn { color: #fbbf24; }
-        .log-error { color: #f87171; }
-
-        @media (max-width: 600px) {
-            h1 { font-size: 2rem; }
-            .controls { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🔒 FHE Eva Core</h1>
-            <div class="subtitle">Adaptive Runtime Environment v0.1.0</div>
-        </header>
-
-        <div class="status-card">
-            <div>
-                <div style="color: #94a3b8; font-size: 0.9rem;">Current Backend</div>
-                <div id="backendDisplay" style="font-size: 1.2rem; font-weight: bold; color: white;">Detecting...</div>
-            </div>
-            <div id="statusBadge" class="badge init">Waiting</div>
-        </div>
-
-        <div class="controls">
-            <button class="btn-primary" onclick="initRuntime()">
-                <span>⚡</span> Initialize Runtime
-            </button>
-            <button class="btn-success" onclick="runNTT()">
-                <span>🚀</span> Run NTT 4096
-            </button>
-            <button class="btn-warning" onclick="runBenchmark()">
-                <span>📊</span> Benchmark (10x)
-            </button>
-            <button style="background: #ef4444;" onclick="forceFallback()">
-                <span>🔄</span> Test Fallback
-            </button>
-        </div>
-
-        <div class="console" id="consoleOutput">
-            <div class="log-entry">
-                <span class="log-time">System</span>
-                <span class="log-info">Ready to initialize FHE Eva Core...</span>
-            </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="qr.html" style="color: #60a5fa; text-decoration: none;">📱 Switch to QR Code View</a>
-        </div>
-    </div>
-
-    <script>
-        const consoleEl = document.getElementById('consoleOutput');
-        const backendDisplay = document.getElementById('backendDisplay');
-        const statusBadge = document.getElementById('statusBadge');
-        let currentBackend = 'None';
-
-        function log(msg, type = 'info') {
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" + "." + "3-digit" });
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerHTML = `<span class="log-time">${time}</span><span class="log-${type}">${msg}</span>`;
-            consoleEl.appendChild(entry);
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-        }
-
-        async function initRuntime() {
-            log('Scanning hardware capabilities...', 'info');
-            statusBadge.textContent = 'Scanning';
-            statusBadge.className = 'badge processing';
-            
-            // Simulation of Hardware Detection
-            setTimeout(() => {
-                const hasWebGPU = 'gpu' in navigator;
-                const ua = navigator.userAgent;
-                
-                if (hasWebGPU) {
-                    currentBackend = 'WebGPU (Experimental)';
-                    log('✅ GPU Detected: WebGPU API available', 'success');
-                } else {
-                    currentBackend = 'WASM SIMD';
-                    log('ℹ️ WebGPU not available, falling back to CPU', 'warn');
-                    log('✅ CPU Features: SIMD instructions detected', 'success');
-                }
-                
-                backendDisplay.textContent = currentBackend;
-                statusBadge.textContent = 'Ready';
-                statusBadge.className = 'badge ready';
-                log(`🚀 Runtime initialized on ${currentBackend}`, 'success');
-            }, 800);
-        }
-
-        function runNTT() {
-            if (currentBackend === 'None') {
-                log('❌ Error: Runtime not initialized. Click Initialize first.', 'error');
-                return;
-            }
-            
-            log('Starting NTT 4096 computation...', 'info');
-            statusBadge.textContent = 'Computing';
-            statusBadge.className = 'badge processing';
-            
-            // Simulate processing time based on backend
-            const delay = currentBackend.includes('WebGPU') ? 20 : 180;
-            
-            setTimeout(() => {
-                const time = currentBackend.includes('WebGPU') ? '2.12ms' : '18.45ms';
-                log(`✅ NTT 4096 completed in ${time}`, 'success');
-                log(`   Polynomial degree: 4096`, 'info');
-                log(`   Security level: 128-bit`, 'info');
-                statusBadge.textContent = 'Idle';
-                statusBadge.className = 'badge ready';
-            }, 600); // Visual delay for UX
-        }
-
-        function runBenchmark() {
-             if (currentBackend === 'None') {
-                log('❌ Error: Runtime not initialized.', 'error');
-                return;
-            }
-            
-            log('Starting Benchmark Suite (10 iterations)...', 'info');
-            let iterations = 0;
-            const max = 10;
-            
-            const interval = setInterval(() => {
-                iterations++;
-                const time = (Math.random() * 2 + (currentBackend.includes('WebGPU') ? 1 : 16)).toFixed(2);
-                log(`   Iter ${iterations}: ${time}ms`, 'info');
-                
-                if (iterations >= max) {
-                    clearInterval(interval);
-                    const avg = currentBackend.includes('WebGPU') ? '2.15ms' : '18.50ms';
-                    log(`📊 Benchmark finished. Average: ${avg}`, 'success');
-                }
-            }, 100);
         }
         
-        function forceFallback() {
-            log('⚠️ Simulating critical driver failure...', 'warn');
-            
-            setTimeout(() => {
-                log('🔄 Automatic Fallback triggered', 'warn');
-                currentBackend = 'WASM Scalar (Safe Mode)';
-                backendDisplay.textContent = currentBackend;
-                backendDisplay.style.color = '#fbbf24';
-                log('✅ System recovered. Running in Safe Mode.', 'success');
-            }, 500);
+        .test-steps h2 {
+            color: #a78bfa;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
         }
-    </script>
-</body>
-</html>
+        
+        .steps {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+        
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding-left: 40px;
+            position: relative;
+        }
+        
+        .steps li:before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .control-panel {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid #334155;
+        }
+        
+        .control-panel h2 {
+            color: #a78bfa;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding
