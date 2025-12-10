@@ -22,3 +22,7 @@ impl Default for FHEParameters {
         }
     }
 }
+
+/// Re-export common types for easier access
+pub use bfv::{BFVParameters, BFVContext};
+pub use ckks::{CKKSParameters, CKKSContext};
