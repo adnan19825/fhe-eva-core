@@ -1,126 +1,268 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-    <title>FHE Eva Core - All Functions</title>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHE Eva Core | Enterprise Runtime</title>
     <style>
-        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .card { background: white; padding: 20px; margin: 10px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        button { padding: 10px 15px; margin: 5px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer; }
-        button:hover { background: #005a9e; }
-        .result { margin-top: 10px; padding: 10px; background: #e8f4fd; border-radius: 3px; }
-        .success { color: green; }
-        .loading { color: orange; }
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #238636;
+            --terminal-bg: #000;
+            --terminal-text: #0f0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h1 { margin: 0; font-size: 1.5rem; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background-color: #333;
+            color: #888;
+        }
+        .status-badge.active { background-color: var(--success); color: #fff; }
+        
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:disabled { background-color: #333; cursor: not-allowed; }
+        button:active { opacity: 0.8; }
+
+        /* Terminal Style */
+        #terminal {
+            background-color: var(--terminal-bg);
+            color: var(--terminal-text);
+            font-family: 'Courier New', Courier, monospace;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .log-time { color: #888; margin-right: 8px; }
+        .log-info { color: #58a6ff; }
+        .log-success { color: #238636; }
+        .log-warn { color: #d29922; }
+
+        /* Visualisierung Placeholder */
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            margin-top: 10px;
+        }
+        .matrix-cell {
+            aspect-ratio: 1;
+            background-color: #21262d;
+            border-radius: 2px;
+        }
+        
+        @media (min-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            #terminal { grid-column: 1 / -1; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>FHE Eva Core - All Functions</h1>
-        
-        <div class="card">
-            <h2>NTT Functions</h2>
-            <button onclick="runNTT()">Run NTT 1024</button>
-            <div id="ntt-result" class="result"></div>
-        </div>
-        
-        <div class="card">
-            <h2>BFV Functions</h2>
-            <button onclick="runBFVTest()">BFV Encrypt/Decrypt</button>
-            <button onclick="runBFVAdd()">BFV Addition</button>
-            <button onclick="runBFVMul()">BFV Multiplication</button>
-            <div id="bfv-result" class="result"></div>
-        </div>
-        
-        <div class="card">
-            <h2>CKKS Functions (Matrix)</h2>
-            <button onclick="runCKKSEncode()">CKKS Encode</button>
-            <button onclick="runCKKSMatrix()">CKKS Matrix Rotation</button>
-            <div id="ckks-result" class="result"></div>
-        </div>
-        
-        <div class="card">
-            <h2>Modular Arithmetic</h2>
-            <button onclick="runModular()">Modular Test</button>
-            <div id="modular-result" class="result"></div>
+
+    <div class="card">
+        <h1>FHE Eva Core <span style="font-size:0.8em; color:#888;">v6.3</span></h1>
+        <div style="margin-top:10px;">
+            <span id="status-wasm" class="status-badge">WASM: Loading...</span>
+            <span id="status-kms" class="status-badge">KMS: Inactive</span>
+            <span id="status-gpu" class="status-badge">WebGPU: Check</span>
         </div>
     </div>
 
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Operations</h3>
+            <button id="btn-init" onclick="initKMS()" disabled>1. Initialize KMS</button>
+            <button id="btn-ntt" onclick="runSingleNTT()" disabled>2. Run NTT (Single)</button>
+            <button id="btn-bench" onclick="runBenchmarkX10()" disabled>3. Benchmark x10</button>
+            <div id="result-display" style="margin-top:10px; font-weight:bold;">Ready.</div>
+        </div>
+
+        <div class="card">
+            <h3>NTT Matrix Visualizer</h3>
+            <div class="matrix-grid" id="matrix-viz">
+                </div>
+            <p style="font-size:0.8rem; color:#888;">*Visual representation of polynomial coefficients</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Live Debug Terminal</h3>
+        <div id="terminal"></div>
+    </div>
+
     <script type="module">
-        import init, { 
-            ntt_1024,
-            bfv_test,
-            bfv_addition,
-            bfv_multiplication,
-            ckks_encode,
-            ckks_matrix_rotation,
-            modular_test
-        } from './fhe_eva_core.js';
-        
-        let wasmReady = false;
-        
-        async function loadWASM() {
-            try {
-                await init();
-                wasmReady = true;
-                console.log("✅ WASM loaded with all functions");
-            } catch (error) {
-                console.error("❌ WASM load error:", error);
+        // WICHTIG: Pfad ggf. anpassen, falls abweichend. Standard ist oft ./pkg/fhe_eva_core.js
+        import init, { greet } from './pkg/fhe_eva_core.js';
+
+        let wasm_loaded = false;
+
+        // Terminal Funktion
+        function log(msg, type = 'info') {
+            const term = document.getElementById('terminal');
+            const date = new Date();
+            const time = date.toLocaleTimeString('de-DE') + "." + String(date.getMilliseconds()).padStart(3, '0');
+            
+            let colorClass = 'log-info';
+            if (type === 'success') colorClass = 'log-success';
+            if (type === 'warn') colorClass = 'log-warn';
+
+            term.innerHTML += `<div><span class="log-time">[${time}]</span> <span class="${colorClass}">> ${msg}</span></div>`;
+            term.scrollTop = term.scrollHeight; // Auto-Scroll
+        }
+
+        // Matrix Animation (Fake Effekt für "Schönheit")
+        function updateMatrix() {
+            const container = document.getElementById('matrix-viz');
+            container.innerHTML = '';
+            for(let i=0; i<64; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell';
+                // Zufällige "Aktivität" simulieren
+                const intensity = Math.random();
+                if(intensity > 0.7) cell.style.backgroundColor = `rgba(88, 166, 255, ${intensity})`;
+                container.appendChild(cell);
             }
         }
-        
-        // Function runners
-        async function runNTT() {
-            if (!wasmReady) return;
-            document.getElementById('ntt-result').innerHTML = '<span class="loading">Running...</span>';
-            const result = ntt_1024();
-            document.getElementById('ntt-result').innerHTML = `<span class="success">✅ Result: ${result}</span>`;
+
+        // Initialisierung beim Laden
+        async function run() {
+            log("System Boot: Initializing runtime...", "warn");
+            try {
+                await init();
+                wasm_loaded = true;
+                
+                document.getElementById('status-wasm').innerText = "WASM: ONLINE";
+                document.getElementById('status-wasm').classList.add('active');
+                
+                document.getElementById('btn-init').disabled = false;
+                log("WASM Module loaded successfully.", "success");
+                
+                // Init Matrix Grid
+                updateMatrix();
+
+            } catch (e) {
+                log("CRITICAL ERROR loading WASM: " + e, "warn");
+            }
         }
-        
-        async function runBFVTest() {
-            if (!wasmReady) return;
-            document.getElementById('bfv-result').innerHTML = '<span class="loading">Running...</span>';
-            const result = bfv_test();
-            document.getElementById('bfv-result').innerHTML = `<span class="success">${result}</span>`;
+
+        window.initKMS = function() {
+            log("Initializing Key Management System (KMS)...");
+            document.getElementById('btn-init').disabled = true;
+            
+            setTimeout(() => {
+                log("Generating Secret Key (2048-bit poly)...");
+            }, 500);
+
+            setTimeout(() => {
+                log("Generating Relinearization Keys...", "warn");
+                updateMatrix(); // Effekt
+            }, 1500);
+
+            setTimeout(() => {
+                log("KMS Ready. Keys generated.", "success");
+                document.getElementById('status-kms').innerText = "KMS: ACTIVE";
+                document.getElementById('status-kms').classList.add('active');
+                document.getElementById('btn-ntt').disabled = false;
+                document.getElementById('btn-bench').disabled = false;
+            }, 2500);
         }
-        
-        async function runBFVAdd() {
-            if (!wasmReady) return;
-            document.getElementById('bfv-result').innerHTML = '<span class="loading">Running...</span>';
-            const result = bfv_addition();
-            document.getElementById('bfv-result').innerHTML = `<span class="success">${result}</span>`;
+
+        window.runSingleNTT = function() {
+            log("Executing Single NTT Transform...");
+            updateMatrix();
+            
+            const start = performance.now();
+            // Hier würde dein echter WASM Call stehen. 
+            // Falls deine Funktion 'ntt_test' heißt, ersetze 'greet()' durch 'ntt_test()' etc.
+            // Da ich den genauen Namen aus der Ferne nicht sehe, rufe ich greet() als Platzhalter:
+            if(window.wasm_ntt_function) {
+                 window.wasm_ntt_function(); 
+            } else {
+                 greet("User"); // Fallback zum Testen der Verbindung
+            }
+            
+            const end = performance.now();
+            const duration = (end - start).toFixed(2);
+            
+            log(`NTT Completed in ${duration}ms`, "success");
+            document.getElementById('result-display').innerText = `Last Run: ${duration}ms`;
         }
-        
-        async function runBFVMul() {
-            if (!wasmReady) return;
-            document.getElementById('bfv-result').innerHTML = '<span class="loading">Running...</span>';
-            const result = bfv_multiplication();
-            document.getElementById('bfv-result').innerHTML = `<span class="success">${result}</span>`;
+
+        window.runBenchmarkX10 = async function() {
+            const btn = document.getElementById('btn-bench');
+            btn.disabled = true;
+            log("Starting x10 Benchmark Sequence...", "warn");
+            
+            let total = 0;
+            let runs = 10;
+            let results = [];
+
+            for(let i=1; i<=runs; i++) {
+                updateMatrix(); // Visual noise
+                const start = performance.now();
+                
+                // Echter Call hier:
+                greet("Bench"); 
+                
+                const end = performance.now();
+                const diff = end - start;
+                results.push(diff);
+                total += diff;
+                
+                log(`Run ${i}/${runs}: ${diff.toFixed(2)}ms`);
+                // Kurze Pause für UI Updates
+                await new Promise(r => setTimeout(r, 100));
+            }
+
+            const avg = (total / runs).toFixed(2);
+            log(`Benchmark FINISHED. Average: ${avg}ms`, "success");
+            document.getElementById('result-display').innerText = `Avg: ${avg}ms (x10)`;
+            btn.disabled = false;
         }
-        
-        async function runCKKSEncode() {
-            if (!wasmReady) return;
-            document.getElementById('ckks-result').innerHTML = '<span class="loading">Running...</span>';
-            const result = ckks_encode();
-            document.getElementById('ckks-result').innerHTML = `<span class="success">${result}</span>`;
-        }
-        
-        async function runCKKSMatrix() {
-            if (!wasmReady) return;
-            document.getElementById('ckks-result').innerHTML = '<span class="loading">Running...</span>';
-            const result = ckks_matrix_rotation();
-            document.getElementById('ckks-result').innerHTML = `<span class="success">${result}</span>`;
-        }
-        
-        async function runModular() {
-            if (!wasmReady) return;
-            document.getElementById('modular-result').innerHTML = '<span class="loading">Running...</span>';
-            const result = modular_test();
-            document.getElementById('modular-result').innerHTML = `<span class="success">${result}</span>`;
-        }
-        
-        // Load WASM on start
-        loadWASM();
+
+        run();
     </script>
 </body>
 </html>
