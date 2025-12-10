@@ -60,7 +60,7 @@ jobs:
         node -e "const mod = require('./fhe_eva_core.js'); console.log('WASM module loaded successfully');"
 
     - name: Upload WASM artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # ← GEÄNDERT zu v4!
       with:
         name: fhe-eva-core-wasm
         path: wasm/
@@ -83,7 +83,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download WASM artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4  # ← GEÄNDERT zu v4!
       with:
         name: fhe-eva-core-wasm
         path: dist/
@@ -137,13 +137,11 @@ jobs:
         EOF
 
     - name: Setup Pages
-      uses: actions/configure-pages@v3
+      uses: actions/configure-pages@v4  # ← Optional: Auch zu v4 updaten
 
     - name: Upload to Pages
-      uses: actions/upload-pages-artifact@v2
-      with:
-        path: dist/
+      uses: actions/upload-pages-artifact@v3  # Diese ist noch aktuell
 
     - name: Deploy to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v2
+      uses: actions/deploy-pages@v4  # ← Auch zu v4 updaten
