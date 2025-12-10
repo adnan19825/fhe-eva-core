@@ -1,35 +1,79 @@
-name: Build and Deploy WASM
+name: Build FHE Eva Core
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'
 
 permissions:
   contents: write
   pages: write
   id-token: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      
+    - uses: actions/checkout@v4
+    
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: wasm32-unknown-unknown
-      
-    - name: Install wasm-pack
-      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      
-    - name: Build WASM Package
-      run: wasm-pack build --target web --out-name fhe_eva_core --out-dir ./wasm --release
-      
-    - name: Upload WASM artifacts
-      uses: actions/upload-pages-artifact@v3
+        components: rust-src, clippy, rustfmt
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
       with:
-        path: ./wasm
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Install wasm-pack
+      run: |
+        curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        wasm-pack --version
+    
+    - name: Build WASM
+      run: |
+        wasm-pack build \
+          --target web \
+          --out-name fhe_eva_core \
+          --out-dir ./wasm \
+          --release \
+          --verbose
+    
+    - name: Optimize WASM
+      run: |
+        which wasm-opt || npm install -g binaryen
+        wasm-opt -Oz \
+          --enable-all \
+          --strip-debug \
+          --strip-producers \
+          -o wasm/fhe_eva_core_bg.wasm \
+          wasm/fhe_eva_core_bg.wasm
+        echo "WASM size: $(wc -c < wasm/fhe_eva_core_bg.wasm) bytes"
+    
+    - name: Test WASM
+      run: |
+        node -e "
+          const fs = require('fs');
+          const wasm = fs.readFileSync('./wasm/fhe_eva_core_bg.wasm');
+          console.log('WASM header:', wasm.slice(0, 4).toString('hex'));
+          console.log('WASM is valid:', wasm.slice(0, 4).toString() === '\\0asm');
+        "
+    
+    - name: Deploy to Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./wasm
+        keep_files: true
