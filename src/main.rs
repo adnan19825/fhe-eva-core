@@ -1,23 +1,28 @@
+mod spiel;  // Neue Modul-Deklaration oben
+
 use std::io;
 
 fn main() {
-    println!("Wie heißt du?");
+    println!("=== Hauptmenü ===");
+    println!("1. Begrüßung");
+    println!("2. Zahlen-Ratespiel");
+    println!("3. Beenden");
     
-    let mut name = String::new();
+    let mut wahl = String::new();
     io::stdin()
-        .read_line(&mut name)
+        .read_line(&mut wahl)
         .expect("Fehler beim Lesen");
     
-    let name = name.trim();
-    println!("Hallo, {}! Schön Rust auf dem Handy zu lernen!", name);
-    
-    // Einfache Berechnung
-    println!("Gib eine Zahl ein:");
-    let mut zahl = String::new();
-    io::stdin()
-        .read_line(&mut zahl)
-        .expect("Fehler beim Lesen");
-    
-    let zahl: i32 = zahl.trim().parse().unwrap_or(0);
-    println!("Das Doppelte ist: {}", zahl * 2);
+    match wahl.trim() {
+        "1" => {
+            // Deinen bestehenden Code hier aufrufen
+            println!("Hallo! Wie heißt du?");
+            // ... restlichen Code
+        }
+        "2" => {
+            spiel::rate_spiel();
+        }
+        "3" => println!("Auf Wiedersehen!"),
+        _ => println!("Ungültige Wahl!"),
+    }
 }
