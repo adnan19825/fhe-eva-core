@@ -1,0 +1,32 @@
+{
+  "name": "fhe-eva-core",
+  "version": "0.1.0",
+  "description": "Hardware-accelerated Fully Homomorphic Encryption Runtime",
+  "main": "runtime/loader.js",
+  "scripts": {
+    "dev": "python3 -m http.server 8080",
+    "test": "echo \"Open http://localhost:8080/public/ to test\""
+  },
+  "keywords": [
+    "fhe",
+    "homomorphic-encryption",
+    "webgpu",
+    "wasm",
+    "rust",
+    "privacy",
+    "security"
+  ],
+  "author": "Adnan Mamutoski <adnan@fhe-eva.io>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adnan19825/fhe-eva-core.git"
+  },
+  "homepage": "https://adnan19825.github.io/fhe-eva-core/",
+  "bugs": {
+    "url": "https://github.com/adnan19825/fhe-eva-core/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
