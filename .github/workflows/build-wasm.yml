@@ -28,19 +28,20 @@ jobs:
       - name: Move artifacts to public folder
         run: |
           # 1. WICHTIG: Zielordner erstellen (das hat gefehlt!)
-          mkdir -p public/wasm       
+          mkdir -p public/wasm         
           # 2. Dateien kopieren (aus dem pkg Ordner nach public/wasm)
           cp -r fhe-ntt/pkg/* public/wasm/          
           # 3. Aufräumen (.gitignore löschen, damit GitHub Pages die Dateien sieht)
-          rm -f public/wasm/.gitignore        
+          rm -f public/wasm/.gitignore          
           echo "✅ Dateien erfolgreich kopiert:"
           ls -la public/wasm/
-          - name: Commit and Push changes
-          run: |
+      - name: Commit and Push changes
+        run: |
           git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'       
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'           
           # Füge den neuen Ordner hinzu
-          git add public/wasm/ 
+          git add public/wasm/
+          
           # Prüfe auf Änderungen und pushe nur wenn nötig
           if git diff --staged --quiet; then
             echo "Keine Änderungen im WASM Code."
