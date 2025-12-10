@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 use js_sys::Date;
+
 #[wasm_bindgen]
 pub fn ntt_4096() -> f64 {
     console::log_1(&"🚀 NTT 4096 GESTARTET (echtes WASM)".into());
