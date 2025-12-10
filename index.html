@@ -1,17 +1,21 @@
+FHE Eva Core | Production Runtime v7.0 (Optimized)
+
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FHE Eva Core | Production Runtime</title>
+    <title>FHE Eva Core | Production Runtime v7.0</title>
     <style>
-        /* Modern Enterprise Design */
         :root { --bg: #0d1117; --card: #161b22; --accent: #238636; --text: #c9d1d9; }
         body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; margin: 0; }
         .card { background: var(--card); border: 1px solid #30363d; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
         button { background: #2ea043; color: white; border: none; padding: 12px; width: 100%; font-weight: bold; border-radius: 6px; font-size: 1rem; margin-bottom: 8px; cursor: pointer; transition: background 0.2s; }
         button:hover:not(:disabled) { background: #22863a; }
         button:disabled { background: #333; opacity: 0.7; cursor: not-allowed; }
+        button.ultra { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        button.ultra:hover:not(:disabled) { background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%); }
         #terminal { background: black; color: #39ff14; font-family: monospace; padding: 10px; height: 180px; overflow-y: auto; border-radius: 4px; font-size: 0.8rem; border: 1px solid #30363d; }
         .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; margin-top: 10px; }
         .cell { aspect-ratio: 1; background: #21262d; border-radius: 2px; }
@@ -19,20 +23,31 @@
         .metric { font-size: 0.9rem; color: #8b949e; }
         .success { color: #2ea043; font-weight: bold; }
         .error { color: #f85149; font-weight: bold; }
+        .warning { color: #FFD700; }
+        .separator { height: 1px; background: #30363d; margin: 15px 0; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>FHE Eva Core <span style="color:#2ea043">v6.4</span></h1>
+    <h1>FHE Eva Core <span class="success">v7.0</span></h1>
     <div class="metric">Deployment Status: <span id="status">Connecting to WASM...</span></div>
+    <div class="metric">Device: S23 Ultra • SD 8 Gen 2 • Adreno 740</div>
 </div>
 
 <div class="card">
-    <div class="metric">FHE Kernel Control (Radix-4)</div>
+    <div class="metric">FHE Kernel Control (Original Radix-2)</div>
     <button id="btn-init" onclick="doInit()">1. INITIALIZE & KEYGEN (4096)</button>
     <button id="btn-run" onclick="doRun()" disabled>2. EXECUTE NTT TRANSFORM</button>
     <button id="btn-bench" onclick="doBench()" disabled>3. STRESS BENCHMARK (x50 Cycles)</button>
+</div>
+
+<div class="card">
+    <div class="metric">🚀 Optimierte FHE Benchmarks (Radix-4 + Montgomery)</div>
+    <button class="ultra" onclick="runUltraNTT()">ULTRA: NTT-4096 Benchmark</button>
+    <button class="ultra" onclick="runComparison()">📊 Compare Old vs New</button>
+    <button class="ultra" onclick="runMemoryTest()">💾 Memory Bandwidth Test</button>
+    <button class="ultra" onclick="runAllOptimized()">⚡ Run All Optimized Tests</button>
 </div>
 
 <div class="card">
@@ -46,41 +61,50 @@
 </div>
 
 <script type="module">
-    // FINALER PFAD: Verwendet den 'wasm/' Ordner
+    // Import WebAssembly Module
     import init, { FheContext } from './wasm/fhe_eva_core.js';
 
+    // Global Variables
     let fhe_runtime = null;
-    const POLYNOMIAL_SIZE = 4096; 
+    let wasm_module = null;
+    const POLYNOMIAL_SIZE = 4096;
 
-    function log(msg, isError = false) {
+    // Logging Function
+    function log(msg, isError = false, isWarning = false) {
         const t = document.getElementById('terminal');
-        const className = isError ? 'error' : 'success';
+        let className = '';
+        if (isError) className = 'error';
+        else if (isWarning) className = 'warning';
+        else className = 'success';
+        
         t.innerHTML += `<div>[${new Date().toLocaleTimeString()}] <span class="${className}">${msg}</span></div>`;
         t.scrollTop = t.scrollHeight;
     }
 
+    // Visualization
     function updateViz() {
         if(!fhe_runtime) return;
         const grid = document.getElementById('viz');
         grid.innerHTML = '';
         
         try {
-            for(let i=0; i<64; i++) {
-                const val = fhe_runtime.get_coeff(i); 
+            for(let i = 0; i < 64; i++) {
+                const val = fhe_runtime.get_coeff(i);
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 
-                const brightness = (Number(val % 255n) / 255); 
+                const brightness = (Number(val % 255n) / 255);
                 if(val > 0n) {
-                    cell.style.background = `rgba(46, 160, 67, ${0.2 + 0.8 * brightness})`; 
+                    cell.style.background = `rgba(46, 160, 67, ${0.2 + 0.8 * brightness})`;
                 }
                 grid.appendChild(cell);
             }
         } catch (e) {
-             log("[ERROR] Visualizer konnte nicht auf WASM-Speicher zugreifen.", true);
+            log("[ERROR] Visualizer konnte nicht auf WASM-Speicher zugreifen.", true);
         }
     }
 
+    // ==================== ORIGINAL FUNCTIONS ====================
     window.doInit = function() {
         document.getElementById('btn-init').disabled = true;
         log(`[KMS] Allocating ${POLYNOMIAL_SIZE} coefficients...`);
@@ -98,14 +122,14 @@
             document.getElementById('btn-bench').disabled = false;
         } catch(e) {
             log(`[FATAL] Initialization failed: ${e.message}`, true);
-            document.getElementById('btn-init').disabled = false; 
+            document.getElementById('btn-init').disabled = false;
         }
     };
 
     window.doRun = function() {
         if(!fhe_runtime) return log("[ERROR] Runtime nicht initialisiert. Führen Sie Schritt 1 aus.", true);
         
-        log("[NTT] Starting Radix-4 Transform...");
+        log("[NTT] Starting Radix-2 Transform...");
         const start = performance.now();
         
         try {
@@ -113,7 +137,7 @@
             
             const end = performance.now();
             log(`[NTT] Transform complete. Execution time: ${(end-start).toFixed(2)}ms`);
-            updateViz(); 
+            updateViz();
         } catch(e) {
             log(`[ERROR] NTT Execution failed: ${e.message}`, true);
         }
@@ -128,9 +152,9 @@
         
         setTimeout(() => {
             try {
-                for(let i=0; i<50; i++) {
+                for(let i = 0; i < 50; i++) {
                     const t0 = performance.now();
-                    fhe_runtime.run_ntt(); 
+                    fhe_runtime.run_ntt();
                     total += (performance.now() - t0);
                 }
                 const avg = total / 50;
@@ -143,25 +167,188 @@
         }, 50);
     };
 
+    // ==================== OPTIMIZED FUNCTIONS ====================
+    window.runUltraNTT = async function() {
+        log("🚀 Starting ULTRA NTT-4096 Benchmark...", false, true);
+        
+        if (!wasm_module) {
+            log("❌ Error: Optimized WASM module not loaded", true);
+            return;
+        }
+        
+        try {
+            // Check if optimized functions exist
+            if (!wasm_module.init_fhe_mobile || !wasm_module.ntt_4096_ultrafast) {
+                log("⚠️ Optimized functions not available in WASM module", false, true);
+                log("   Compile with: wasm-pack build --target web --release", false, true);
+                return;
+            }
+            
+            // Initialize mobile context
+            const initSuccess = wasm_module.init_fhe_mobile(4096, 0x7fffffffe0001, 65537);
+            if (!initSuccess) {
+                log("❌ Failed to initialize mobile FHE context", true);
+                return;
+            }
+            
+            // Run ultra-fast NTT
+            const start = performance.now();
+            const result = wasm_module.ntt_4096_ultrafast();
+            const end = performance.now();
+            
+            // Display results
+            const measuredTime = (end - start).toFixed(2);
+            const wasmReportedTime = result.toFixed(2);
+            
+            log(`🚀 ULTRA NTT-4096 Complete!`);
+            log(`   WASM reported: ${wasmReportedTime}ms`);
+            log(`   JS measured: ${measuredTime}ms`);
+            
+            // Compare with your screenshot results
+            const yourBestNTT = 2.5; // From your screenshot: "NTT 4096: 2.5 ms"
+            if (result < yourBestNTT) {
+                log(`🎉 New record! Beat previous ${yourBestNTT}ms by ${((yourBestNTT - result) / yourBestNTT * 100).toFixed(1)}%`);
+            }
+            
+        } catch (e) {
+            log(`❌ Error in ULTRA NTT: ${e.message}`, true);
+        }
+    };
+
+    window.runComparison = async function() {
+        log("📊 Starting NTT Comparison Benchmark...", false, true);
+        
+        if (!wasm_module) {
+            log("❌ Error: WASM module not loaded", true);
+            return;
+        }
+        
+        try {
+            if (!wasm_module.benchmark_ntt_comparison) {
+                log("⚠️ Comparison function not available", false, true);
+                return;
+            }
+            
+            const result = wasm_module.benchmark_ntt_comparison();
+            
+            // Parse and display results nicely
+            log("================ NTT COMPARISON ================");
+            const lines = result.split('\n');
+            lines.forEach(line => {
+                if (line.includes('SPEEDUP')) {
+                    log(`🔥 ${line}`, false, true);
+                } else if (line.includes('OLD') || line.includes('NEW')) {
+                    log(`📈 ${line}`);
+                } else {
+                    log(line);
+                }
+            });
+            log("================================================");
+            
+        } catch (e) {
+            log(`❌ Error in comparison: ${e.message}`, true);
+        }
+    };
+
+    window.runMemoryTest = async function() {
+        log("💾 Testing Memory Bandwidth...", false, true);
+        
+        if (!wasm_module) {
+            log("❌ Error: WASM module not loaded", true);
+            return;
+        }
+        
+        try {
+            if (!wasm_module.memory_bandwidth_test) {
+                log("⚠️ Memory test function not available", false, true);
+                return;
+            }
+            
+            const bw = wasm_module.memory_bandwidth_test();
+            
+            // Display result
+            log(`💾 Memory Bandwidth Test Complete:`);
+            log(`   Result: ${bw.toFixed(2)} GB/s`);
+            
+            // Compare with your screenshot results
+            const yourBestBW = 9.8; // From your screenshot: "Memory: 9.8 GB/s"
+            if (bw > yourBestBW) {
+                const improvement = ((bw - yourBestBW) / yourBestBW * 100).toFixed(1);
+                log(`🎉 ${improvement}% faster than your best (${yourBestBW} GB/s)`);
+            } else if (bw > 5.4) { // Another screenshot showed 5.4 GB/s
+                log(`✓ Better than minimum (5.4 GB/s)`);
+            }
+            
+            // S23 Ultra theoretical maximum is ~68 GB/s
+            const utilization = (bw / 68 * 100).toFixed(1);
+            log(`   Utilization: ${utilization}% of S23 Ultra's 68 GB/s theoretical max`);
+            
+        } catch (e) {
+            log(`❌ Error in memory test: ${e.message}`, true);
+        }
+    };
+
+    window.runAllOptimized = async function() {
+        log("⚡ Starting All Optimized Tests...", false, true);
+        
+        // Run tests sequentially
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await window.runUltraNTT();
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await window.runMemoryTest();
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await window.runComparison();
+        
+        log("✅ All optimized tests completed!");
+    };
+
+    // ==================== INITIALIZATION ====================
     async function main() {
         document.getElementById('btn-init').disabled = true;
+        
         try {
+            // Load WebAssembly
             await init();
+            
+            // Store module reference for optimized functions
+            wasm_module = await import('./wasm/fhe_eva_core.js');
+            
+            // Update status
             document.getElementById('status').innerHTML = '<span class="success">WASM Kernel Loaded & Ready</span>';
             document.getElementById('btn-init').disabled = false;
-            log("Core v6.4 (Radix-4) initialized.");
             
+            log("FHE Eva Core v7.0 initialized successfully.");
+            log("Device: S23 Ultra • SD 8 Gen 2 • Adreno 740");
+            log("Ready for benchmarks.");
+            
+            // Initialize visualization grid
             const grid = document.getElementById('viz');
-            for(let i=0; i<64; i++) {
-                let c = document.createElement('div'); c.className='cell'; grid.appendChild(c);
+            for(let i = 0; i < 64; i++) {
+                let c = document.createElement('div');
+                c.className = 'cell';
+                grid.appendChild(c);
             }
+            
+            // Check if optimized functions are available
+            if (wasm_module.init_fhe_mobile) {
+                log("✅ Optimized Radix-4 functions available", false, true);
+            } else {
+                log("⚠️ Optimized functions not compiled yet", false, true);
+                log("   Run: wasm-pack build --target web --release", false, true);
+            }
+            
         } catch(e) {
             document.getElementById('status').innerHTML = '<span class="error">WASM Load Error</span>';
-            log(`[FATAL] Failed to load FHE Core: ${e.message}. Prüfe den Dateipfad.`, true);
+            log(`[FATAL] Failed to load FHE Core: ${e.message}`, true);
+            log("Check: 1) wasm/ folder exists 2) Correct import path", true);
         }
     }
 
+    // Start the application
     main();
 </script>
+
 </body>
 </html>
