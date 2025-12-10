@@ -28,8 +28,13 @@ jobs:
 
     - name: Deploy
       run: |
+        # Stelle sicher, dass der wasm/ Ordner existiert
+        mkdir -p wasm/
+        # Lösche alte Dateien darin
         rm -rf wasm/*
+        # Kopiere die neu gebauten Dateien
         cp pkg/*.wasm pkg/*.js wasm/
+        # Zeige, was kopiert wurde
         ls -la wasm/
 
         git config --global user.name 'github-actions[bot]'
