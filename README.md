@@ -1,38 +1,39 @@
 <div align="center">
 
 # 🔒 **FHE Eva Core**  
-*Adaptive Fully Homomorphic Encryption Runtime*
+*Hardware-accelerated Fully Homomorphic Encryption*
 
-[![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org)
-[![WebGPU](https://img.shields.io/badge/WebGPU-Experimental-blue.svg)](https://www.w3.org/TR/webgpu/)
-[![WASM](https://img.shields.io/badge/WASM-SIMD-brightgreen.svg)](https://webassembly.org)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen.svg)](https://adnan19825.github.io/fhe-eva-core/)
+[![QR Code](https://img.shields.io/badge/Mobile-QR_Code-blue.svg)](https://adnan19825.github.io/fhe-eva-core/public/qr.html)
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](LICENSE)
 
-**Hardware-accelerated FHE that works everywhere - from GPU to CPU**
-
-[Live Demo](https://fhe-eva-demo.vercel.app) · [Documentation](docs/) · [Whitepaper](WHITEPAPER.md) · [Report Bug](https://github.com/adnan19825/fhe-eva-core/issues)
+**Adaptive runtime that accelerates encrypted computations 10-100x faster**
 
 </div>
 
 ---
 
-## 🎯 **Why Eva Core?**
+## 🚀 **Live Demo**
 
-**Problem:** Fully Homomorphic Encryption (FHE) is theoretically perfect for privacy-preserving computation, but **impractically slow** on general-purpose hardware.
+### **Test it right now on any device:**
 
-**Solution:** Eva Core - an adaptive runtime that intelligently accelerates FHE computations using **whatever hardware is available**, from server GPUs to mobile CPUs.
+| Platform | Link | Description |
+|----------|------|-------------|
+| **🌐 Web Demo** | [https://adnan19825.github.io/fhe-eva-core/](https://adnan19825.github.io/fhe-eva-core/) | Full interactive demo |
+| **📱 QR Code** | [https://adnan19825.github.io/fhe-eva-core/public/qr.html](https://adnan19825.github.io/fhe-eva-core/public/qr.html) | Mobile optimized page |
+| **💻 GitHub** | [https://github.com/adnan19825/fhe-eva-core](https://github.com/adnan19825/fhe-eva-core) | Source code |
 
-| Scenario | Traditional FHE | **Eva Core** |
-|----------|----------------|--------------|
-| **Enterprise Desktop** | 50-100ms (CPU only) | **< 10ms** (GPU accelerated) |
-| **Mobile Device** | Not feasible | **< 50ms** (WASM SIMD optimized) |
-| **Browser Restrictions** | "App not supported" | **100% availability** (Scalar WASM fallback) |
+### **What to test in the demo:**
+1. **Initialize Runtime** - Detects your hardware (WebGPU/WASM/CPU)
+2. **Run NTT 4096** - Test encrypted computation performance  
+3. **Benchmark** - Run multiple iterations for accurate timing
+4. **Fallback** - Test automatic hardware fallback
 
-## 🚀 **Features**
+## 🎯 **Key Features**
 
-### ⚡ **Multi-Backend Architecture**
-```javascript
-// Automatically selects the optimal backend
-if (hasWebGPU()) useGPU();        // 10-100x faster
-else if (hasSIMD()) useWASMSIMD(); // 5-10x faster  
-else useWASMScalar();              // Always works
+### **⚡ Hardware Acceleration**
+- **WebGPU Backend**: GPU-accelerated computations (10-100x faster)
+- **WASM SIMD**: CPU vector instructions (5-10x faster)
+- **Scalar Fallback**: Always works, 100% availability
+
+### **🔄 Adaptive Runtime**
