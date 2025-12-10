@@ -1,17 +1,37 @@
 [package]
 name = "fhe-eva-core"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Production-ready Fully Homomorphic Encryption Runtime"
+repository = "https://github.com/adnan19825/fhe-eva-core"
+license = "Apache-2.0"
+readme = "README.md"
+keywords = ["fhe", "homomorphic-encryption", "wasm", "webassembly", "cryptography"]
+categories = ["cryptography", "wasm"]
 
 [lib]
 crate-type = ["cdylib"]
+path = "src/lib.rs"
 
 [dependencies]
-wasm-bindgen = "0.2.106"
+wasm-bindgen = { version = "0.2.106", features = ["serde-serialize"] }
 js-sys = "0.3.83"
 web-sys = { version = "0.3.83", features = ["console", "Window", "Performance"] }
+num-bigint = { version = "0.4.4", features = ["rand"] }
+num-traits = "0.2.18"
+num-complex = "0.4.5"
+rand = "0.8.5"
+getrandom = { version = "0.2.15", features = ["js"] }
 
 [profile.release]
 lto = true
 opt-level = "z"
 codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--all-features"]
