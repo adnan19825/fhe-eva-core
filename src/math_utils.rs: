@@ -1,0 +1,52 @@
+// src/math_utils.rs
+pub fn mod_pow_fast(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
+    let mut result = 1;
+    base %= modulus;
+    while exp > 0 {
+        if exp & 1 == 1 {
+            result = mod_mul_fast(result, base, modulus);
+        }
+        base = mod_mul_fast(base, base, modulus);
+        exp >>= 1;
+    }
+    result
+}
+
+pub fn mod_mul_fast(a: u64, b: u64, modulus: u64) -> u64 {
+    // Einfache Implementierung, für bessere Performance siehe Montgomery-Multiplikation
+    ((a as u128 * b as u128) % modulus as u128) as u64
+}
+
+pub fn compute_r_squared(modulus: u64) -> u64 {
+    let bits = 64 - modulus.leading_zeros();
+    let r = 1u64 << bits;
+    mod_mul_fast(r % modulus, r % modulus, modulus)
+}
+
+pub fn mod_inv_extended(a: u64, modulus: u64) -> u64 {
+    let mut t = 0;
+    let mut new_t = 1;
+    let mut r = modulus as i64;
+    let mut new_r = a as i64;
+    
+    while new_r != 0 {
+        let quotient = r / new_r;
+        let temp_t = t;
+        t = new_t;
+        new_t = temp_t - quotient * new_t;
+        
+        let temp_r = r;
+        r = new_r;
+        new_r = temp_r - quotient * new_r;
+    }
+    
+    if r > 1 {
+        panic!("{} is not invertible modulo {}", a, modulus);
+    }
+    
+    if t < 0 {
+        t += modulus as i64;
+    }
+    
+    t as u64
+}
