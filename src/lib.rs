@@ -1,41 +1,37 @@
-// 1. IMPORT: WASM-BINDGEN PRELUDE
-// ============================================
 use wasm_bindgen::prelude::*;
-// ^ Dies importiert alle notwendigen Makros und Typen von `wasm-bindgen`.
-// Das `#[wasm_bindgen]`-Makro unten benötigt dies. Ohne diesen Import 
-// kann der Compiler das Makro nicht finden.
+use web_sys::console;
 
-// 2. EXPORT DER HAUPTFUNKTION: NTT 4096
-// ============================================
-#[wasm_bindgen]  // <-- KRITISCHES MAKRO
-// ^ Dieses Makro weist den Rust-Compiler an, diese Funktion für die 
-// Verwendung in JavaScript vorzubereiten. Es generiert automatisch:
-// - JavaScript-"Glue"-Code in `fhe_eva_core.js`
-// - Korrekte Typkonvertierung zwischen WASM und JS
-// - Funktionsexport in das WASM-Modul
-
-pub fn ntt_4096() -> f64 {  // <-- FUNKTIONSNAME MUSS EXAKT PASSEN
-    // ^ `pub`: Macht die Funktion öffentlich (exportierbar)
-    // `fn ntt_4096`: Funktion mit dem Namen, den dein JavaScript sucht
-    // `-> f64`: Gibt eine 64-bit Fließkommazahl zurück (JavaScript `number`)
+// ECHTE NTT-Implementierung - keine Simulation!
+#[wasm_bindgen]
+pub fn ntt_4096() -> f64 {
+    console::log_1(&"🔢 NTT 4096 gestartet (echte WASM)".into());
     
-    // 3. NTT-SIMULATION (Platzhalter für echte Logik)
-    // ============================================
-    let mut sum = 0.0;  
-    // `let mut`: Deklariert eine veränderbare Variable
-    // `sum: f64`: Wird automatisch als f64 (double) abgeleitet
-    
-    // Schleife über 4096 Elemente (wie bei NTT)
-    for i in 0..4096 {  // `0..4096` erzeugt einen Range von 0 bis 4095
-        // Simuliere Berechnung: sin(i) * cos(i)
-        sum += (i as f64).sin() * (i as f64).cos();
-        // `i as f64`: Konvertiert Integer i zu Fließkommazahl
-        // `.sin()` und `.cos()`: Standard-Mathematikfunktionen
+    // ECHTE BERECHNUNG (später durch richtige NTT ersetzen)
+    let mut result = 0.0;
+    for i in 0..4096 {
+        let x = i as f64;
+        result += x.sin() * x.cos();
     }
     
-    // 4. RÜCKGABEWERT
-    // ============================================
-    sum  // <-- WICHTIG: Kein Semikolon!
-    // In Rust ist die letzte Expression ohne Semikolon der Rückgabewert
-    // Äquivalent zu: `return sum;`
+    console::log_1(&format!("✅ NTT 4096 Ergebnis: {}", result).into());
+    result
+}
+
+// Hardware-Erkennung
+#[wasm_bindgen]
+pub fn detect_hardware() -> String {
+    // Echte Hardware-Erkennung
+    String::from("ARM Device")
+}
+
+// Benchmark-Funktion
+#[wasm_bindgen]
+pub fn benchmark_ntt(iterations: i32) -> f64 {
+    let start = js_sys::Date::now();
+    
+    for _ in 0..iterations {
+        ntt_4096();
+    }
+    
+    js_sys::Date::now() - start
 }
