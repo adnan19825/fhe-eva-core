@@ -1,10 +1,6 @@
-# Prüfe ob spiel.rs existiert
-ls src/
-
-# Wenn nicht, erstelle es:
-cat > src/spiel.rs << 'EOF'
 use std::io;
 use std::cmp::Ordering;
+use std::fs;  // ⬅️ KORRIGIERT: :: statt :
 
 pub fn rate_spiel() {
     println!("\n=== Zahlen-Ratespiel ===");
@@ -21,7 +17,8 @@ pub fn rate_spiel() {
     
     loop {
         versuche += 1;
-        print!("Versuch {}: Dein Tipp? ", versuche);
+        println!("\n--- Versuch {} ---", versuche);
+        print!("Dein Tipp: ");
         
         let _ = std::io::Write::flush(&mut std::io::stdout());
         
@@ -33,34 +30,52 @@ pub fn rate_spiel() {
         let tipp: u32 = match tipp.trim().parse() {
             Ok(num) => num,
             Err(_) => {
-                println!("Bitte eine Zahl zwischen 1 und 100 eingeben!");
+                println!("❌ Bitte eine Zahl zwischen 1 und 100 eingeben!");
                 continue;
             }
         };
         
         if tipp < 1 || tipp > 100 {
-            println!("Bitte eine Zahl zwischen 1 und 100!");
+            println!("❌ Bitte eine Zahl zwischen 1 und 100!");
             continue;
         }
         
         match tipp.cmp(&geheime_zahl) {
-            Ordering::Less => println!("Zu klein!"),
-            Ordering::Greater => println!("Zu groß!"),
+            Ordering::Less => println!("📉 Zu klein!"),
+            Ordering::Greater => println!("📈 Zu groß!"),
             Ordering::Equal => {
-                println!("\n🎉 Richtig! 🎉");
-                println!("Die Zahl war: {}", geheime_zahl);
-                println!("Du hast {} Versuche gebraucht.", versuche);
+                println!("\n=================================");
+                println!("🎉🎉🎉 RICHTIG! 🎉🎉🎉");
+                println!("=================================");
+                println!("Die gesuchte Zahl war: {}", geheime_zahl);
+                println!("Versuche: {}", versuche);
+                println!("Punkte: {}", 100 / versuche);
                 
-                if versuche <= 5 {
-                    println!("Wow, du bist gut!");
-                } else if versuche <= 10 {
-                    println!("Gut gemacht!");
-                } else {
-                    println!("Übung macht den Meister!");
+                match versuche {
+                    1..=3 => println!("🏆 Unglaublich! Du bist ein Profi!"),
+                    4..=6 => println!("🥇 Sehr gut gemacht!"),
+                    7..=10 => println!("👍 Gute Leistung!"),
+                    _ => println!("💪 Weiter üben!"),
                 }
+                
+                // ⭐⭐ HIGHSCORE AUFRUFEN ⭐⭐
+                update_highscore(versuche);
+                
+                println!("=================================");
                 break;
             }
         }
     }
+    
+    println!("\nDrücke Enter, um zum Hauptmenü zurückzukehren...");
+    let mut _pause = String::new();
+    io::stdin().read_line(&mut _pause).ok();
 }
-EOF
+
+// ⭐⭐ HIGHSCORE-FUNKTION ⭐⭐
+fn update_highscore(versuche: u32) {
+    let highscore_file = "highscore.txt";
+    
+    let aktueller_best = fs::read_to_string(highscore_file)
+        .unwrap_or(String::from("100"))
+        .
