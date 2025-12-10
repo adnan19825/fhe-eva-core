@@ -1,0 +1,11 @@
+[package]
+name = "fhe-eva-core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"] # Wichtig für WASM!
+
+[dependencies]
+wasm-bindgen = "0.2" # Wichtigste Abhängigkeit
+# Füge hier deine anderen Rust-Abhängigkeiten ein
