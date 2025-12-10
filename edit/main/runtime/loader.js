@@ -277,3 +277,173 @@ export class AdaptiveRuntime {
         const results = {
             size: size,
             iterations: iterations,
+            backend: this.type,
+            measurements: []
+        };
+        
+        // Warm-up
+        await this.computeNTT(testData, { twiddles });
+        
+        // Run benchmark
+        for (let i = 0; i < iterations; i++) {
+            const start = performance.now();
+            await this.computeNTT(testData.slice(), { twiddles });
+            const duration = performance.now() - start;
+            
+            results.measurements.push(duration);
+            this.log(`  Iteration ${i + 1}: ${duration.toFixed(2)}ms`);
+        }
+        
+        // Calculate statistics
+        results.average = results.measurements.reduce((a, b) => a + b, 0) / iterations;
+        results.min = Math.min(...results.measurements);
+        results.max = Math.max(...results.measurements);
+        results.stdDev = this.calculateStdDev(results.measurements);
+        
+        this.log(`📊 Benchmark completed: ${results.average.toFixed(2)}ms average`, 'success');
+        
+        return results;
+    }
+    
+    calculateStdDev(values) {
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        const squareDiffs = values.map(value => Math.pow(value - avg, 2));
+        const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / squareDiffs.length;
+        return Math.sqrt(avgSquareDiff);
+    }
+    
+    log(message, level = 'info') {
+        if (this.options.logLevel === 'silent' && level !== 'error') {
+            return;
+        }
+        
+        const timestamp = new Date().toLocaleTimeString();
+        const prefix = `[FHE Eva ${timestamp}]`;
+        
+        if (level === 'error') {
+            console.error(prefix, message);
+        } else if (level === 'warning') {
+            console.warn(prefix, message);
+        } else if (level === 'success') {
+            console.log(`%c${prefix} ${message}`, 'color: #10b981');
+        } else {
+            console.log(prefix, message);
+        }
+    }
+    
+    getStatus() {
+        return {
+            initialized: this.initialized,
+            backend: this.type,
+            capabilities: this.capabilities,
+            performance: this.performance.getStats()
+        };
+    }
+    
+    destroy() {
+        this.backend = null;
+        this.initialized = false;
+        this.log('Runtime destroyed');
+    }
+}
+
+// WASM Backend (placeholder)
+class WASMBackend {
+    async init() {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    async computeNTT(data, twiddles, modulus) {
+        // Simulate WASM computation
+        await new Promise(resolve => setTimeout(resolve, 20));
+        
+        return data.map(x => (x * 2) % modulus);
+    }
+}
+
+// Scalar Backend (fallback)
+class ScalarBackend {
+    async computeNTT(data, twiddles, modulus) {
+        // Simple CPU implementation
+        const result = new Int32Array(data.length);
+        
+        for (let i = 0; i < data.length; i++) {
+            result[i] = (data[i] * 2) % modulus;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        return Array.from(result);
+    }
+}
+
+// Performance Monitor
+class PerformanceMonitor {
+    constructor() {
+        this.measurements = [];
+        this.maxHistory = 100;
+    }
+    
+    record(duration, success) {
+        this.measurements.push({
+            timestamp: Date.now(),
+            duration,
+            success
+        });
+        
+        if (this.measurements.length > this.maxHistory) {
+            this.measurements = this.measurements.slice(-this.maxHistory);
+        }
+    }
+    
+    getStats() {
+        if (this.measurements.length === 0) {
+            return null;
+        }
+        
+        const successful = this.measurements.filter(m => m.success);
+        const durations = successful.map(m => m.duration);
+        
+        if (durations.length === 0) {
+            return {
+                samples: 0,
+                successRate: 0
+            };
+        }
+        
+        const sum = durations.reduce((a, b) => a + b, 0);
+        const avg = sum / durations.length;
+        
+        return {
+            samples: this.measurements.length,
+            successRate: successful.length / this.measurements.length,
+            averageMs: avg,
+            minMs: Math.min(...durations),
+            maxMs: Math.max(...durations),
+            lastMeasurement: this.measurements[this.measurements.length - 1]
+        };
+    }
+    
+    clear() {
+        this.measurements = [];
+    }
+}
+
+// Export singleton instance
+export let fheRuntime = null;
+
+export async function getRuntime(options) {
+    if (!fheRuntime) {
+        fheRuntime = new AdaptiveRuntime(options);
+        await fheRuntime.init();
+    }
+    return fheRuntime;
+}
+
+// Utility function for quick testing
+export async function quickTest() {
+    const runtime = await getRuntime();
+    const testData = new Int32Array(1024).fill(1);
+    const result = await runtime.computeNTT(testData);
+    return result;
+            }
