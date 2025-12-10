@@ -1,0 +1,70 @@
+name: Build and Deploy WebAssembly
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'fhe-ntt/**'      # Nur starten, wenn sich Rust-Code ändert
+      - '.github/workflows/build-wasm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    name: Build WASM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: 'latest'
+
+      - name: Build WebAssembly
+        run: |
+          # Gehe in den Rust-Ordner und baue
+          cd fhe-ntt
+          wasm-pack build --release --target web
+          echo "✅ Build erfolgreich"
+
+      - name: Move artifacts to public folder
+        run: |
+          # Erstelle Zielordner falls nicht vorhanden
+          mkdir -p public/wasm
+          
+          # Kopiere die gebauten Dateien (WASM + JS Glue Code)
+          cp -r fhe-ntt/pkg/* public/wasm/
+          
+          # Lösche die .gitignore Datei von wasm-pack (stört bei GitHub Pages)
+          rm -f public/wasm/.gitignore
+          
+          echo "📂 Inhalt von public/wasm:"
+          ls -la public/wasm/
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Füge den public/wasm Ordner hinzu
+          git add public/wasm/
+          
+          # Prüfe auf Änderungen
+          if git diff --staged --quiet; then
+            echo "🤷 Keine Änderungen im WASM-Code erkannt."
+          else
+            echo "🚀 Änderungen erkannt. Committe..."
+            # [skip ci] verhindert Endlosschleife!
+            git commit -m "chore(wasm): update compiled wasm artifacts [skip ci]"
+            git push
+          fi
