@@ -1,4 +1,4 @@
-name: Build WebAssembly
+name: Build and Deploy WebAssembly
 
 on:
   push:
@@ -6,10 +6,14 @@ on:
   workflow_dispatch: # Ermöglicht manuellen Start
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # WICHTIG: Erlaubt dem Workflow, Commits durchzuführen
+
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - name: Setup Rust
       run: |
@@ -20,11 +24,27 @@ jobs:
     - name: Install wasm-pack
       run: cargo install wasm-pack
 
-    - name: Build WASM
-      run: wasm-pack build --target web
+    - name: Build WebAssembly
+      run: wasm-pack build --release --target web
 
-    - name: Upload WASM artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: wasm-pkg
-        path: pkg/
+    - name: Deploy WASM files to repository
+      run: |
+        # Lösche alte Dateien im wasm/ Ordner (falls vorhanden)
+        rm -rf wasm/*
+        # Kopiere die neu gebauten Dateien
+        cp pkg/*.wasm pkg/*.js wasm/
+        # Zeige, was kopiert wurde
+        ls -la wasm/
+
+        # Konfiguriere Git und committe die Änderungen
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add wasm/
+        
+        # Prüfe, ob es Änderungen zu commiten gibt
+        if git diff --staged --quiet; then
+          echo "Keine Änderungen im wasm/ Ordner."
+        else
+          git commit -m "chore: Update WebAssembly build from GitHub Actions [skip ci]"
+          git push
+          
