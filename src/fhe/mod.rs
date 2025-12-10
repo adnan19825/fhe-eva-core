@@ -21,7 +21,6 @@ impl Default for FHEParameters {
             root_of_unity: 7,
         }
     }
-}
 
 /// Re-export common types for easier access
 pub use bfv::{BFVParameters, BFVContext};
