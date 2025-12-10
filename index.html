@@ -30,7 +30,7 @@
 
 <div class="card">
     <div class="metric">FHE Kernel Control (Radix-4)</div>
-    <button id="btn-init" onclick="doInit()" disabled>1. INITIALIZE & KEYGEN (4096)</button>
+    <button id="btn-init" onclick="doInit()">1. INITIALIZE & KEYGEN (4096)</button>
     <button id="btn-run" onclick="doRun()" disabled>2. EXECUTE NTT TRANSFORM</button>
     <button id="btn-bench" onclick="doBench()" disabled>3. STRESS BENCHMARK (x50 Cycles)</button>
 </div>
@@ -49,8 +49,9 @@
     // Importiert das WASM. Name 'fhe_eva_core' muss stimmen (GitHub Default).
     import init, { FheContext } from './pkg/fhe_eva_core.js';
 
-    let context = null;
-    const POLYNOMIAL_SIZE = 4096; // Echte Größe! 4096 Elemente.
+    // *** WICHTIGE ÄNDERUNG: Wir speichern die Runtime global ***
+    let fhe_runtime = null;
+    const POLYNOMIAL_SIZE = 4096; 
 
     function log(msg, isError = false) {
         const t = document.getElementById('terminal');
@@ -61,75 +62,81 @@
 
     // Liest echte Daten aus dem RAM für die Visualisierung
     function updateViz() {
-        if(!context) return;
+        if(!fhe_runtime) return;
         const grid = document.getElementById('viz');
         grid.innerHTML = '';
-        for(let i=0; i<64; i++) {
-            const val = context.get_coeff(i); // Echter Wert aus Rust (Radix-4)
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            
-            // Helligkeit basierend auf dem echten Wert für die Visualisierung
-            const brightness = (Number(val % 255n) / 255); 
-            if(val > 0n) {
-                // Grüner Farbverlauf von 20% bis 100% Helligkeit
-                cell.style.background = `rgba(46, 160, 67, ${0.2 + 0.8 * brightness})`; 
+        
+        // Fängt mögliche Fehler beim Zugriff ab
+        try {
+            for(let i=0; i<64; i++) {
+                const val = fhe_runtime.get_coeff(i); // Echter Wert aus Rust (Radix-4)
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                const brightness = (Number(val % 255n) / 255); 
+                if(val > 0n) {
+                    cell.style.background = `rgba(46, 160, 67, ${0.2 + 0.8 * brightness})`; 
+                }
+                grid.appendChild(cell);
             }
-            grid.appendChild(cell);
+        } catch (e) {
+             log("[ERROR] Visualizer konnte nicht auf WASM-Speicher zugreifen.", true);
         }
     }
 
     window.doInit = function() {
+        document.getElementById('btn-init').disabled = true;
         log(`[KMS] Allocating ${POLYNOMIAL_SIZE} coefficients...`);
         const start = performance.now();
         
         try {
-            // ECHTER CALL: Allokiert Speicher und füllt ihn (Radix-4 Kernel)
-            context = FheContext.new(POLYNOMIAL_SIZE);
-            const bytes = context.generate_keys();
+            // *** WICHTIGE ÄNDERUNG: FheContext wird instanziiert und global gespeichert ***
+            fhe_runtime = FheContext.new(POLYNOMIAL_SIZE);
+            const bytes = fhe_runtime.generate_keys();
             
             const end = performance.now();
             log(`[KMS] Keygen complete. ${bytes} bytes in ${(end-start).toFixed(2)}ms.`);
             updateViz();
             
-            document.getElementById('btn-init').disabled = true;
             document.getElementById('btn-run').disabled = false;
             document.getElementById('btn-bench').disabled = false;
         } catch(e) {
-            log(`[ERROR] Initialization failed: ${e.message}`, true);
+            log(`[FATAL] Initialization failed. FHEContext konnte nicht erstellt werden.`, true);
+            document.getElementById('btn-init').disabled = false; // Erneut versuchen
         }
     };
 
     window.doRun = function() {
-        if(!context) return log("[ERROR] Runtime not initialized. Run Step 1.", true);
+        // *** WICHTIGE ÄNDERUNG: Prüft, ob die Instanz existiert ***
+        if(!fhe_runtime) return log("[ERROR] Runtime nicht initialisiert. Führen Sie Schritt 1 aus.", true);
         
         log("[NTT] Starting Radix-4 Transform...");
         const start = performance.now();
         
         try {
-            // ECHTER CALL: Radix-4 Berechnung
-            context.run_ntt();
+            // ECHTER CALL: Ruft die Methode auf der gespeicherten Instanz auf
+            fhe_runtime.run_ntt();
             
             const end = performance.now();
             log(`[NTT] Transform complete. Execution time: ${(end-start).toFixed(2)}ms`);
-            updateViz(); // Matrix ändert sich basierend auf Berechnung
+            updateViz(); 
         } catch(e) {
             log(`[ERROR] NTT Execution failed: ${e.message}`, true);
         }
     };
 
     window.doBench = function() {
-        if(!context) return log("[ERROR] Runtime not initialized. Run Step 1.", true);
+        if(!fhe_runtime) return log("[ERROR] Runtime nicht initialisiert. Führen Sie Schritt 1 aus.", true);
 
         log("[BENCHMARK] Starting Stress Test (50 cycles)...");
+        document.getElementById('btn-bench').disabled = true;
         let total = 0;
         
-        // setTimeout, um die UI nicht komplett zu blockieren
         setTimeout(() => {
             try {
                 for(let i=0; i<50; i++) {
                     const t0 = performance.now();
-                    context.run_ntt(); // Echte Last auf CPU
+                    fhe_runtime.run_ntt(); // Echte Last auf CPU
                     total += (performance.now() - t0);
                 }
                 const avg = total / 50;
@@ -138,24 +145,26 @@
             } catch(e) {
                 log(`[ERROR] Benchmark failed: ${e.message}`, true);
             }
+            document.getElementById('btn-bench').disabled = false;
         }, 50);
     };
 
     async function main() {
+        document.getElementById('btn-init').disabled = true;
         try {
             await init();
             document.getElementById('status').innerHTML = '<span class="success">WASM Kernel Loaded & Ready</span>';
             document.getElementById('btn-init').disabled = false;
             log("Core v6.4 (Radix-4) initialized.");
             
-            // Leere Grid init
+            // Leeres Grid init
             const grid = document.getElementById('viz');
             for(let i=0; i<64; i++) {
                 let c = document.createElement('div'); c.className='cell'; grid.appendChild(c);
             }
         } catch(e) {
             document.getElementById('status').innerHTML = '<span class="error">WASM Load Error</span>';
-            log(`[FATAL] Failed to load FHE Core: ${e.message}.`, true);
+            log(`[FATAL] Failed to load FHE Core: ${e.message}. Prüfe den Dateipfad.`, true);
         }
     }
 
