@@ -1,34 +1,126 @@
-function runNTT() {
-    if (!runtimeInitialized) {
-        updateStatus('❌ Bitte zuerst Laufzeit initialisieren', 'error');
-        return;
-    }
-    
-    updateStatus('⚡ Führe NTT 4096 aus (echtes WASM)...', 'loading');
-    runNttBtn.disabled = true;
-    
-    // WICHTIG: Echte WASM-Funktion aufrufen
-    if (window.wasmExports && typeof window.wasmExports.ntt_4096 === 'function') {
-        try {
-            const startTime = performance.now();
-            
-            // ✅ DIESER AUFRUF RUFT DIE RUST-FUNKTION AUF!
-            const result = window.wasmExports.ntt_4096();
-            
-            const endTime = performance.now();
-            const time = (endTime - startTime).toFixed(1);
-            
-            updateStatus(`✅ NTT 4096 abgeschlossen in ${time} ms`, 'success');
-            addResult(`NTT 4096 abgeschlossen in ${time} ms | Ergebnis: ${result}`);
-            
-        } catch (error) {
-            updateStatus(`❌ Fehler bei NTT: ${error.message}`, 'error');
-            addResult(`NTT Fehler: ${error.message}`, true);
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FHE Eva Core - All Functions</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 10px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 10px 15px; margin: 5px; background: #007acc; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #005a9e; }
+        .result { margin-top: 10px; padding: 10px; background: #e8f4fd; border-radius: 3px; }
+        .success { color: green; }
+        .loading { color: orange; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FHE Eva Core - All Functions</h1>
+        
+        <div class="card">
+            <h2>NTT Functions</h2>
+            <button onclick="runNTT()">Run NTT 1024</button>
+            <div id="ntt-result" class="result"></div>
+        </div>
+        
+        <div class="card">
+            <h2>BFV Functions</h2>
+            <button onclick="runBFVTest()">BFV Encrypt/Decrypt</button>
+            <button onclick="runBFVAdd()">BFV Addition</button>
+            <button onclick="runBFVMul()">BFV Multiplication</button>
+            <div id="bfv-result" class="result"></div>
+        </div>
+        
+        <div class="card">
+            <h2>CKKS Functions (Matrix)</h2>
+            <button onclick="runCKKSEncode()">CKKS Encode</button>
+            <button onclick="runCKKSMatrix()">CKKS Matrix Rotation</button>
+            <div id="ckks-result" class="result"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Modular Arithmetic</h2>
+            <button onclick="runModular()">Modular Test</button>
+            <div id="modular-result" class="result"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { 
+            ntt_1024,
+            bfv_test,
+            bfv_addition,
+            bfv_multiplication,
+            ckks_encode,
+            ckks_matrix_rotation,
+            modular_test
+        } from './fhe_eva_core.js';
+        
+        let wasmReady = false;
+        
+        async function loadWASM() {
+            try {
+                await init();
+                wasmReady = true;
+                console.log("✅ WASM loaded with all functions");
+            } catch (error) {
+                console.error("❌ WASM load error:", error);
+            }
         }
-    } else {
-        updateStatus('❌ NTT-Funktion nicht in WASM gefunden', 'error');
-        addResult('Die NTT-Funktion wurde im WASM-Code nicht gefunden.', true);
-    }
-    
-    runNttBtn.disabled = false;
-}
+        
+        // Function runners
+        async function runNTT() {
+            if (!wasmReady) return;
+            document.getElementById('ntt-result').innerHTML = '<span class="loading">Running...</span>';
+            const result = ntt_1024();
+            document.getElementById('ntt-result').innerHTML = `<span class="success">✅ Result: ${result}</span>`;
+        }
+        
+        async function runBFVTest() {
+            if (!wasmReady) return;
+            document.getElementById('bfv-result').innerHTML = '<span class="loading">Running...</span>';
+            const result = bfv_test();
+            document.getElementById('bfv-result').innerHTML = `<span class="success">${result}</span>`;
+        }
+        
+        async function runBFVAdd() {
+            if (!wasmReady) return;
+            document.getElementById('bfv-result').innerHTML = '<span class="loading">Running...</span>';
+            const result = bfv_addition();
+            document.getElementById('bfv-result').innerHTML = `<span class="success">${result}</span>`;
+        }
+        
+        async function runBFVMul() {
+            if (!wasmReady) return;
+            document.getElementById('bfv-result').innerHTML = '<span class="loading">Running...</span>';
+            const result = bfv_multiplication();
+            document.getElementById('bfv-result').innerHTML = `<span class="success">${result}</span>`;
+        }
+        
+        async function runCKKSEncode() {
+            if (!wasmReady) return;
+            document.getElementById('ckks-result').innerHTML = '<span class="loading">Running...</span>';
+            const result = ckks_encode();
+            document.getElementById('ckks-result').innerHTML = `<span class="success">${result}</span>`;
+        }
+        
+        async function runCKKSMatrix() {
+            if (!wasmReady) return;
+            document.getElementById('ckks-result').innerHTML = '<span class="loading">Running...</span>';
+            const result = ckks_matrix_rotation();
+            document.getElementById('ckks-result').innerHTML = `<span class="success">${result}</span>`;
+        }
+        
+        async function runModular() {
+            if (!wasmReady) return;
+            document.getElementById('modular-result').innerHTML = '<span class="loading">Running...</span>';
+            const result = modular_test();
+            document.getElementById('modular-result').innerHTML = `<span class="success">${result}</span>`;
+        }
+        
+        // Load WASM on start
+        loadWASM();
+    </script>
+</body>
+</html>
