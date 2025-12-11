@@ -1,0 +1,50 @@
+pub fn ntt_ultrafast(&mut self) {
+    let n = self.size;
+    let m = self.modulus;
+    
+    // 1. Bit-reversal using precomputed table
+    for i in 0..n {
+        let j = self.bit_rev[i];
+        if i < j {
+            self.coeffs.swap(i, j);
+        }
+    }
+    
+    // 2. Radix-4 stages (only log4(n) stages instead of log2(n))
+    let mut len = 4;
+    let mut stage = 0;
+    
+    while len <= n {
+        let w_base = self.twiddles_radix4[stage];
+        
+        for i in (0..n).step_by(len) {
+            // Process 4 elements at once
+            for j in 0..len/4 {
+                let idx0 = i + j;
+                let idx1 = idx0 + len/4;
+                let idx2 = idx0 + 2*len/4;
+                let idx3 = idx0 + 3*len/4;
+                
+                // Get values with Montgomery multiplication
+                let u0 = self.coeffs[idx0];
+                let u1 = self.mul_mod(self.coeffs[idx1], w_base[0]);
+                let u2 = self.mul_mod(self.coeffs[idx2], w_base[1]);
+                let u3 = self.mul_mod(self.coeffs[idx3], w_base[2]);
+                
+                // ✅ KORREKTUR: Inline Butterfly statt fehlerhafter Funktion
+                let t0 = (u0 + u2) % m;
+                let t1 = (u0 + m - u2) % m;
+                let t2 = (u1 + u3) % m;
+                let t3 = (u1 + m - u3) % m;
+                
+                self.coeffs[idx0] = (t0 + t2) % m;
+                self.coeffs[idx1] = (t1 + t3) % m;
+                self.coeffs[idx2] = (t0 + m - t2) % m;
+                self.coeffs[idx3] = (t1 + m - t3) % m;
+            }
+        }
+        
+        len <<= 2; // Multiply by 4
+        stage += 1;
+    }
+}
